@@ -1,0 +1,1 @@
+This file is intentionally unused. Protected pages enforce auth in each server page.

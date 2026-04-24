@@ -1,0 +1,27 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: custom_crm
+      POSTGRES_USER: crm
+      POSTGRES_PASSWORD: crm
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  app:
+    build:
+      context: .
+    depends_on:
+      - postgres
+    environment:
+      DATABASE_URL: postgresql://crm:crm@postgres:5432/custom_crm?schema=public
+      SESSION_SECRET: replace-with-at-least-32-random-characters
+      SIP_CREDENTIAL_SECRET: replace-with-32-byte-encryption-secret
+      NEXT_PUBLIC_APP_URL: https://crm.example.com
+    ports:
+      - "3000:3000"
+
+volumes:
+  postgres_data:

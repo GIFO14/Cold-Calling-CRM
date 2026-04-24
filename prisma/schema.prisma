@@ -1,0 +1,231 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  AGENT
+}
+
+enum CustomFieldType {
+  TEXT
+  NUMBER
+  DATE
+  BOOLEAN
+  URL
+}
+
+enum ImportStatus {
+  DRAFT
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum LeadActivityType {
+  IMPORT_CREATED
+  IMPORT_UPDATED
+  NOTE
+  CALL_STARTED
+  CALL_ENDED
+  CALL_FAILED
+  STAGE_CHANGED
+  FIELD_UPDATED
+  FOLLOW_UP_SET
+}
+
+enum CallStatus {
+  STARTED
+  RINGING
+  ANSWERED
+  COMPLETED
+  FAILED
+  MISSED
+  CANCELED
+}
+
+enum CallOutcome {
+  NO_ANSWER
+  BUSY
+  WRONG_NUMBER
+  INTERESTED
+  CALL_BACK
+  NOT_INTERESTED
+  MEETING_BOOKED
+  DO_NOT_CALL
+  OTHER
+}
+
+model User {
+  id                 String                  @id @default(cuid())
+  name               String
+  email              String                  @unique
+  passwordHash       String
+  role               UserRole                @default(AGENT)
+  active             Boolean                 @default(true)
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
+  ownedLeads         Lead[]                  @relation("LeadOwner")
+  activities         LeadActivity[]
+  imports            ImportBatch[]
+  callLogs           CallLog[]
+  telephonySettings  AgentTelephonySettings?
+}
+
+model AgentTelephonySettings {
+  id                   String   @id @default(cuid())
+  userId               String   @unique
+  sipUsername          String
+  sipPasswordEncrypted String
+  sipDisplayName       String?
+  sipExtension         String
+  enabled              Boolean  @default(true)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PbxSettings {
+  id                 String   @id @default(cuid())
+  sipWsUrl           String
+  sipDomain          String
+  outboundDialPrefix String?
+  defaultCountryCode String?
+  enabled            Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model BusinessSettings {
+  id                    String   @id @default(cuid())
+  defaultDealValueCents Int      @default(0)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model PipelineStage {
+  id        String   @id @default(cuid())
+  name      String
+  position  Int
+  color     String
+  isDefault Boolean  @default(false)
+  isWon     Boolean  @default(false)
+  isLost    Boolean  @default(false)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  leads     Lead[]
+}
+
+model Lead {
+  id              String         @id @default(cuid())
+  firstName       String?
+  lastName        String?
+  fullName        String?
+  company         String?
+  jobTitle        String?
+  phone           String?
+  phoneNormalized String?
+  phoneInvalid    Boolean        @default(false)
+  phoneOptOut     Boolean        @default(false)
+  email           String?
+  emailNormalized String?
+  emailInvalid    Boolean        @default(false)
+  emailOptOut     Boolean        @default(false)
+  website         String?
+  linkedinUrl     String?
+  source          String?
+  ownerId         String?
+  stageId         String?
+  dealValueOverrideCents Int?
+  lastContactedAt DateTime?
+  nextFollowUpAt  DateTime?
+  customFields    Json           @default("{}")
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  owner           User?          @relation("LeadOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  stage           PipelineStage? @relation(fields: [stageId], references: [id], onDelete: SetNull)
+  activities      LeadActivity[]
+  callLogs        CallLog[]
+
+  @@index([phoneNormalized])
+  @@index([emailNormalized])
+  @@index([stageId])
+  @@index([ownerId])
+}
+
+model CustomFieldDefinition {
+  id                  String          @id @default(cuid())
+  key                 String          @unique
+  label               String
+  type                CustomFieldType @default(TEXT)
+  createdFromImportId String?
+  createdAt           DateTime        @default(now())
+}
+
+model ImportBatch {
+  id          String           @id @default(cuid())
+  filename    String
+  status      ImportStatus     @default(DRAFT)
+  totalRows   Int              @default(0)
+  createdRows Int              @default(0)
+  updatedRows Int              @default(0)
+  skippedRows Int              @default(0)
+  errorRows   Int              @default(0)
+  mappingJson Json
+  createdById String
+  createdAt   DateTime         @default(now())
+  completedAt DateTime?
+  createdBy   User             @relation(fields: [createdById], references: [id])
+  errors      ImportRowError[]
+}
+
+model ImportRowError {
+  id            String      @id @default(cuid())
+  importBatchId String
+  rowNumber     Int
+  rawRow        Json
+  message       String
+  createdAt     DateTime    @default(now())
+  importBatch   ImportBatch @relation(fields: [importBatchId], references: [id], onDelete: Cascade)
+}
+
+model LeadActivity {
+  id        String           @id @default(cuid())
+  leadId    String
+  userId    String?
+  type      LeadActivityType
+  title     String
+  body      String?
+  metadata  Json             @default("{}")
+  createdAt DateTime         @default(now())
+  lead      Lead             @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  user      User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([leadId])
+}
+
+model CallLog {
+  id              String       @id @default(cuid())
+  leadId          String
+  userId          String?
+  phoneDialed     String
+  sipCallId       String?
+  status          CallStatus   @default(STARTED)
+  startedAt       DateTime     @default(now())
+  answeredAt      DateTime?
+  endedAt         DateTime?
+  durationSeconds Int?
+  outcome         CallOutcome?
+  notes           String?
+  lead            Lead         @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  user            User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([leadId])
+  @@index([userId])
+}
