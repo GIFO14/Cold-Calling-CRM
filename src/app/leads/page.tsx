@@ -48,7 +48,8 @@ export default async function LeadsPage({
         stageId: true,
         phoneInvalid: true,
         phoneOptOut: true,
-        emailOptOut: true
+        emailOptOut: true,
+        customFields: true
       },
       orderBy: { updatedAt: "desc" },
       take: 200

@@ -21,7 +21,12 @@ export const NATIVE_IMPORT_LEAD_FIELD_KEYS = [
   "company_data_source",
   "research_confidence",
   "lead_capture_evidence",
-  "irresistible_offer"
+  "irresistible_offer",
+  "opening_line",
+  "best_call_window",
+  "pain_point_oneliner",
+  "objection_prep",
+  "competitor_context"
 ] as const;
 
 export type NativeImportLeadFieldKey = (typeof NATIVE_IMPORT_LEAD_FIELD_KEYS)[number];
@@ -55,7 +60,12 @@ export const NATIVE_IMPORT_LEAD_FIELDS: readonly NativeImportLeadFieldDefinition
   { key: "company_data_source", label: "Font de dades de l'empresa", type: "URL", aliases: ["company data source"] },
   { key: "research_confidence", label: "Confiança de la recerca", type: "TEXT", aliases: ["research confidence"] },
   { key: "lead_capture_evidence", label: "Evidència de captació", type: "TEXT", aliases: ["lead capture evidence"], multiline: true },
-  { key: "irresistible_offer", label: "Oferta irresistible", type: "TEXT", aliases: ["irresistible offer"], multiline: true }
+  { key: "irresistible_offer", label: "Oferta irresistible", type: "TEXT", aliases: ["irresistible offer"], multiline: true },
+  { key: "opening_line", label: "Opening line", type: "TEXT", aliases: ["opening line", "hook"], multiline: true },
+  { key: "best_call_window", label: "Millor hora per trucar", type: "TEXT", aliases: ["best call window", "call window"] },
+  { key: "pain_point_oneliner", label: "Pain point (one-liner)", type: "TEXT", aliases: ["pain point", "pain"], multiline: true },
+  { key: "objection_prep", label: "Preparació d'objeccions", type: "TEXT", aliases: ["objection prep", "objections"], multiline: true },
+  { key: "competitor_context", label: "Competidors / context", type: "TEXT", aliases: ["competitor context", "competitors"], multiline: true }
 ];
 
 const NATIVE_IMPORT_FIELD_KEY_SET = new Set<string>(NATIVE_IMPORT_LEAD_FIELDS.map((field) => field.key));

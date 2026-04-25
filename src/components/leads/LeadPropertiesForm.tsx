@@ -3,6 +3,7 @@
 import { Plus, Save, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
+import { renderEnrichedField } from "@/components/leads/EnrichedFieldValue";
 import {
   getNativeImportLeadField,
   mergeLeadFieldDefinitions,
@@ -150,25 +151,6 @@ function buildCustomRows(definitions: CustomFieldDefinition[], customFields: Rec
   return rows;
 }
 
-function formatDisplayValue(value: unknown, type: CustomFieldType) {
-  if (type === "BOOLEAN") return Boolean(value) ? "Sí" : "No";
-  if (value === null || value === undefined || value === "") return "-";
-  if (typeof value === "object") return JSON.stringify(value);
-  return String(value);
-}
-
-function renderDisplayValue(value: unknown, type: CustomFieldType) {
-  if (type === "URL" && typeof value === "string" && /^https?:\/\//i.test(value.trim())) {
-    return (
-      <a href={value} target="_blank" rel="noreferrer">
-        {value}
-      </a>
-    );
-  }
-
-  return formatDisplayValue(value, type);
-}
-
 function renderFieldInput(
   row: { type: CustomFieldType; multiline?: boolean; value: string | boolean },
   onChange: (value: string | boolean) => void
@@ -218,15 +200,27 @@ export function LeadPropertiesForm({
     [mergedFieldDefinitions]
   );
   const { nativeFieldValues, remainingCustomFields } = useMemo(() => splitKnownLeadFieldValues(lead.customFields), [lead.customFields]);
+
+  // Keys that are surfaced elsewhere (callouts, collapsible) and should be hidden from the generic list.
+  const HIDDEN_IN_GRID = new Set(["pain_point_oneliner", "competitor_context", "objection_prep", "opening_line", "best_call_window"]);
+
   const nativeFieldEntries = useMemo(
     () =>
-      NATIVE_IMPORT_LEAD_FIELDS.filter((field) => hasDisplayValue(nativeFieldValues[field.key], field.type)).map((field) => ({
+      NATIVE_IMPORT_LEAD_FIELDS.filter(
+        (field) => !HIDDEN_IN_GRID.has(field.key) && hasDisplayValue(nativeFieldValues[field.key], field.type)
+      ).map((field) => ({
         ...field,
         value: nativeFieldValues[field.key]
       })),
     [nativeFieldValues]
   );
-  const customFieldEntries = useMemo(() => Object.entries(remainingCustomFields), [remainingCustomFields]);
+  const customFieldEntries = useMemo(
+    () => Object.entries(remainingCustomFields).filter(([, value]) => hasDisplayValue(value, "TEXT")),
+    [remainingCustomFields]
+  );
+  const painPointValue = typeof nativeFieldValues.pain_point_oneliner === "string" ? nativeFieldValues.pain_point_oneliner.trim() : "";
+  const competitorValue = typeof nativeFieldValues.competitor_context === "string" ? nativeFieldValues.competitor_context.trim() : "";
+  const objectionValue = typeof nativeFieldValues.objection_prep === "string" ? nativeFieldValues.objection_prep.trim() : "";
   const [nativeRows, setNativeRows] = useState(() => buildNativeRows(nativeFieldValues));
   const [customRows, setCustomRows] = useState(() => buildCustomRows(otherCustomFieldDefinitions, remainingCustomFields));
 
@@ -356,17 +350,39 @@ export function LeadPropertiesForm({
           {lead.emailInvalid ? <span className="badge">Email invalid</span> : null}
           {lead.emailOptOut ? <span className="badge">Email opt-out</span> : null}
         </div>
+        {painPointValue || competitorValue ? (
+          <div className="grid" style={{ gap: 8 }}>
+            {painPointValue ? (
+              <div className="callout callout--pain">
+                <span className="callout__label">Pain point</span>
+                <span>{painPointValue}</span>
+              </div>
+            ) : null}
+            {competitorValue ? (
+              <div className="callout callout--competitor">
+                <span className="callout__label">Competidors / context</span>
+                <span>{competitorValue}</span>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
         <h3>Camps enriquits</h3>
         <div className="grid grid-2">
           {nativeFieldEntries.map((field) => (
             <div key={field.key} style={field.multiline ? { gridColumn: "1 / -1" } : undefined}>
               <span className="muted">{field.label}</span>
               <br />
-              {renderDisplayValue(field.value, field.type)}
+              {renderEnrichedField(field.key, field.value, field.type)}
             </div>
           ))}
           {!nativeFieldEntries.length ? <p className="muted">Sense dades enriquides.</p> : null}
         </div>
+        {objectionValue ? (
+          <details className="objection-details">
+            <summary>Preparació d&apos;objeccions</summary>
+            <div className="objection-details__body">{objectionValue}</div>
+          </details>
+        ) : null}
         <h3>Altres camps personalitzats</h3>
         <div className="grid grid-2">
           {customFieldEntries.map(([key, value]) => (

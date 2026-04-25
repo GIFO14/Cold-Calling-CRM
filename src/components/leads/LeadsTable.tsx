@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { LeadBadges } from "@/components/leads/LeadBadges";
 import { LeadCallButton } from "@/components/leads/LeadCallButton";
 import { LeadStageSelect } from "@/components/leads/LeadStageSelect";
 import { displayLeadName } from "@/lib/leads/normalize";
@@ -25,7 +26,15 @@ type LeadListItem = {
   phoneInvalid: boolean;
   phoneOptOut: boolean;
   emailOptOut: boolean;
+  customFields?: unknown;
 };
+
+function normalizeCustomFields(value: unknown): Record<string, unknown> | null {
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    return value as Record<string, unknown>;
+  }
+  return null;
+}
 
 export function LeadsTable({
   leads,
@@ -198,9 +207,17 @@ export function LeadsTable({
                       />
                     </td>
                     <td>
-                      <Link href={`/leads/${lead.id}`}>
-                        <strong>{displayLeadName(lead)}</strong>
-                      </Link>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
+                        <Link href={`/leads/${lead.id}`}>
+                          <strong>{displayLeadName(lead)}</strong>
+                        </Link>
+                        <LeadBadges
+                          customFields={normalizeCustomFields(lead.customFields)}
+                          jobTitle={lead.jobTitle}
+                          compact
+                          responsive
+                        />
+                      </div>
                       <div className="muted">
                         {lead.company} {lead.jobTitle ? `· ${lead.jobTitle}` : ""}
                       </div>

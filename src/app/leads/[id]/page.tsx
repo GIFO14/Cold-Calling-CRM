@@ -1,6 +1,8 @@
 import { format } from "date-fns";
 import { redirect } from "next/navigation";
 import { AppShell } from "@/components/layout/AppShell";
+import { CallReadyBlock } from "@/components/leads/CallReadyBlock";
+import { LeadBadges } from "@/components/leads/LeadBadges";
 import { LeadCallButton } from "@/components/leads/LeadCallButton";
 import { LeadPropertiesForm } from "@/components/leads/LeadPropertiesForm";
 import { LeadStageSelect } from "@/components/leads/LeadStageSelect";
@@ -71,7 +73,10 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
     <AppShell user={user}>
       <div className="page-header">
         <div>
-          <h1>{displayLeadName(lead)}</h1>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center" }}>
+            <h1>{displayLeadName(lead)}</h1>
+            <LeadBadges customFields={customFields} jobTitle={lead.jobTitle} />
+          </div>
           <p>{lead.company ?? "Sense empresa"} {lead.jobTitle ? `· ${lead.jobTitle}` : ""}</p>
         </div>
         <LeadCallButton
@@ -81,6 +86,18 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           disabled={lead.phoneInvalid || lead.phoneOptOut}
         />
       </div>
+      {lead.phone ? (
+        <CallReadyBlock
+          leadId={lead.id}
+          leadName={displayLeadName(lead)}
+          company={lead.company}
+          jobTitle={lead.jobTitle}
+          phone={lead.phone}
+          phoneDisabled={lead.phoneInvalid || lead.phoneOptOut}
+          openingLine={typeof customFields.opening_line === "string" ? customFields.opening_line : null}
+          bestCallWindow={typeof customFields.best_call_window === "string" ? customFields.best_call_window : null}
+        />
+      ) : null}
       <div className="grid grid-2">
         <div className="grid">
           <LeadPropertiesForm
