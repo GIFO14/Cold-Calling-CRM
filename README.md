@@ -1,56 +1,56 @@
 # Cold Calling CRM
 
-CRM privat per cold calling amb leads, pipeline editable, dashboard, imports CSV flexibles i telefonia SIP/WebRTC integrada al navegador.
+Private cold calling CRM with leads, editable pipeline, dashboard, flexible CSV imports, and SIP/WebRTC telephony integrated in the browser.
 
-## Funcionalitats implementades
+## Implemented features
 
-- Login amb cookie HTTP-only i rols `ADMIN` / `AGENT`.
-- Leads amb camps predefinits i `customFields` JSON per columnes CSV desconegudes.
-- Import CSV amb preview, mapping manual, columnes ignorades, custom fields i deduplicació per telèfon/email.
-- Pipeline kanban amb drag-and-drop i historial automàtic de canvis.
-- Dashboard amb mètriques i gràfiques bàsiques.
-- Historial automàtic per imports, notes, stages i trucades.
-- Botó `Call` amb SIP.js/WebRTC contra Incredible PBX/Asterisk via WSS.
-- Configuració de PBX, extensió WebRTC, usuaris i stages.
+- Login with an HTTP-only cookie and `ADMIN` / `AGENT` roles.
+- Leads with predefined fields and `customFields` JSON for unknown CSV columns.
+- CSV import with preview, manual mapping, ignored columns, custom fields, and phone/email deduplication.
+- Kanban pipeline with drag and drop and automatic change history.
+- Dashboard with basic metrics and charts.
+- Automatic history for imports, notes, stages, and calls.
+- `Call` button with SIP.js/WebRTC connected to Incredible PBX/Asterisk over WSS.
+- PBX, WebRTC extension, users, and stages configuration.
 
-## Setup local
+## Local setup
 
-1. Crea/arrenca PostgreSQL:
+1. Create/start PostgreSQL:
 
 ```bash
 docker compose up -d postgres
 ```
 
-2. Aplica l'esquema i dades inicials:
+2. Apply the schema and seed data:
 
 ```bash
 npx prisma db push
 npm run prisma:seed
 ```
 
-3. Arrenca l'app:
+3. Start the app:
 
 ```bash
 npm run dev
 ```
 
-Usuari inicial:
+Initial user:
 
 - Email: `admin@example.com`
 - Password: `admin1234`
 
-## Telefonia WebRTC
+## WebRTC telephony
 
-La pantalla `Configuració` espera:
+The `Settings` screen expects:
 
-- `sipWsUrl`: URL WSS d'Asterisk/Incredible PBX, per exemple `wss://pbx.example.com:8089/ws`.
-- `sipDomain`: domini SIP del PBX.
-- Una extensió WebRTC nova, recomanada `702`, amb credencials pròpies.
+- `sipWsUrl`: Asterisk/Incredible PBX WSS URL, for example `wss://pbx.example.com:8089/ws`.
+- `sipDomain`: the PBX SIP domain.
+- A new WebRTC extension, `702` recommended, with its own credentials.
 
-Asterisk/Incredible PBX ha de tenir WebRTC/PJSIP configurat amb TLS/WSS. Calen mòduls com `res_http_websocket`, `res_pjsip_transport_websocket` i `res_crypto`.
+Asterisk/Incredible PBX must have WebRTC/PJSIP configured with TLS/WSS. Modules such as `res_http_websocket`, `res_pjsip_transport_websocket`, and `res_crypto` are required.
 
-## Notes de producció
+## Production notes
 
-- Canvia `SESSION_SECRET` i `SIP_CREDENTIAL_SECRET` a `.env`.
-- Serveix el CRM per HTTPS perquè els permisos de micròfon i WSS funcionin correctament.
-- No reutilitzis l'extensió 701 si Linphone la manté registrada; configura una extensió nova per al CRM.
+- Change `SESSION_SECRET` and `SIP_CREDENTIAL_SECRET` in `.env`.
+- Serve the CRM over HTTPS so microphone permissions and WSS work correctly.
+- Do not reuse extension 701 if Linphone keeps it registered; configure a new extension for the CRM.
