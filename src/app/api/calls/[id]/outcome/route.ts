@@ -23,12 +23,12 @@ export async function POST(request: Request, { params }: Params) {
   return withUser(async (user) => {
     const { id } = await params;
     const parsed = schema.safeParse(await request.json());
-    if (!parsed.success) return NextResponse.json({ error: "Outcome no vàlid" }, { status: 400 });
+    if (!parsed.success) return NextResponse.json({ error: "Invalid outcome" }, { status: 400 });
 
     const existing = await prisma.callLog.findFirst({
       where: { id, ...(user.role === "ADMIN" ? {} : { userId: user.id }) }
     });
-    if (!existing) return NextResponse.json({ error: "Trucada no trobada" }, { status: 404 });
+    if (!existing) return NextResponse.json({ error: "Call not found" }, { status: 404 });
 
     const endedAt = existing.endedAt ?? new Date();
     const durationSeconds = Math.max(
@@ -52,7 +52,7 @@ export async function POST(request: Request, { params }: Params) {
         leadId: existing.leadId,
         userId: user.id,
         type: existing.status === "FAILED" ? "CALL_FAILED" : "CALL_ENDED",
-        title: "Trucada finalitzada",
+        title: "Call ended",
         body: parsed.data.notes,
         metadata: { callLogId: id, outcome: parsed.data.outcome }
       }

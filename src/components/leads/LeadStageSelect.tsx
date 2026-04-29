@@ -28,7 +28,7 @@ export function LeadStageSelect({
   return (
     <select value={value} onChange={(event) => change(event.target.value)}>
       <option value="" disabled>
-        Sense stage
+        No stage
       </option>
       {stages.map((stage) => (
         <option key={stage.id} value={stage.id}>

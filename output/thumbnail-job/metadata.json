@@ -1,0 +1,42 @@
+{
+  "video_title": "5 reasons production voice agents sound robotic",
+  "target_video_url": null,
+  "style_basis": [
+    "https://youtu.be/cZvUwri1yxg?si=_fw6YjFjmSwg1h0c",
+    "https://youtu.be/Krnsw9WZtRA?si=WzXdXsg74d8xk6xl",
+    "https://youtu.be/QOBhrnrRXLE?si=AehGuMqbHm66he4v"
+  ],
+  "outputs": [
+    {
+      "file": "thumbnail_01.png",
+      "hook": "Show the problem in the bluntest possible way",
+      "text": "SOUNDS ROBOTIC",
+      "angle": "Direct diagnosis of why production voice agents fail naturalness",
+      "score": 8.0,
+      "approved_because": "The message is immediate, the face stays credible, and the layout matches the clean high-contrast reference language best.",
+      "reference_style_notes": "Large face on one side, oversized white text on dark card, single red accent."
+    },
+    {
+      "file": "thumbnail_02.png",
+      "hook": "Position the video as a systems explanation",
+      "text": "WHY THEY BREAK",
+      "angle": "Frames the video as a practical breakdown of hidden technical causes",
+      "score": 8.0,
+      "approved_because": "Balances curiosity and specificity by naming the failure pattern while hinting at concrete reasons.",
+      "reference_style_notes": "Dark field, huge central text, minimal accent tags, creator portrait on the side."
+    },
+    {
+      "file": "thumbnail_03.png",
+      "hook": "Contrast the promise of AI voice with the disappointing reality",
+      "text": "NOT HUMAN YET",
+      "angle": "Reality-check framing focused on the gap between expectation and production quality",
+      "score": 8.0,
+      "approved_because": "Adds a brighter alternative while keeping the same face-plus-text visual language and preserving creator identity.",
+      "reference_style_notes": "Blue text slab, orange accent tag, lighter background inspired by the third reference."
+    }
+  ],
+  "risks": [
+    "No target video URL was available, so the brief was inferred from the supplied title.",
+    "These finals were rendered locally from the supplied portrait rather than with the OpenAI image-generation path described in the skill."
+  ]
+}

@@ -12,7 +12,7 @@ import { PriorityBreakdownBar } from "@/components/leads/PriorityBreakdownBar";
 import { SignalChips } from "@/components/leads/SignalChips";
 
 function genericDisplay(value: unknown, type: NativeImportLeadFieldType): React.ReactNode {
-  if (type === "BOOLEAN") return Boolean(value) ? "Sí" : "No";
+  if (type === "BOOLEAN") return Boolean(value) ? "Yes" : "No";
   if (value === null || value === undefined || value === "") return "-";
   if (type === "URL" && typeof value === "string" && /^https?:\/\//i.test(value.trim())) {
     return (
@@ -69,7 +69,7 @@ export function renderEnrichedField(key: string, value: unknown, type: NativeImp
               className={`dot dot--${freshness}`}
               role="img"
               aria-label={
-                freshness === "fresh" ? "Recent" : freshness === "stale" ? "Mig fresc" : "Antic"
+                freshness === "fresh" ? "Recent" : freshness === "stale" ? "Aging" : "Old"
               }
             />
           ) : null}

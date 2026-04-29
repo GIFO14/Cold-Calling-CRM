@@ -27,5 +27,5 @@ export function displayLeadName(lead: {
   company?: string | null;
 }) {
   const name = [lead.firstName, lead.lastName].filter(Boolean).join(" ").trim();
-  return name || lead.fullName || lead.company || "Lead sense nom";
+  return name || lead.fullName || lead.company || "Unnamed lead";
 }

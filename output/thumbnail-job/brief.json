@@ -1,0 +1,91 @@
+{
+  "video_title": "5 reasons production voice agents sound robotic",
+  "target_video_url": null,
+  "reference_video_urls": [
+    "https://youtu.be/cZvUwri1yxg?si=_fw6YjFjmSwg1h0c",
+    "https://youtu.be/Krnsw9WZtRA?si=WzXdXsg74d8xk6xl",
+    "https://youtu.be/QOBhrnrRXLE?si=AehGuMqbHm66he4v"
+  ],
+  "reference_context": [
+    {
+      "title": "11 Years of No BS Cold Email Advice in 11 Minutes",
+      "channel_name": "Instantly",
+      "thumbnail_file": "references/ref1.jpg"
+    },
+    {
+      "title": "Selling AI Receptionists To Local Businesses With Cold Calls ($5k Per)",
+      "channel_name": "Joey Seeman - CVA Agency",
+      "thumbnail_file": "references/ref2.jpg"
+    },
+    {
+      "title": "Instantly.ai Email Warm Up Tutorial for Beginners (2026)",
+      "channel_name": "Vincent Robin",
+      "thumbnail_file": "references/ref3.jpg"
+    }
+  ],
+  "brief": {
+    "topic": "Why production voice agents still sound robotic despite recent model progress",
+    "pain_point": "Founders and builders expect natural phone or conversational voice agents, but hear stiff timing, canned phrasing, and obviously synthetic delivery in production.",
+    "promise": "A concise explanation of the five concrete reasons this happens, framed as practical diagnosis rather than hype.",
+    "best_thumbnail_angle": "Make the robotic failure obvious in one glance and frame the video as an insider breakdown of why it happens.",
+    "ctr_risk_of_current_thumbnail": "No current thumbnail exists because the video is not uploaded yet."
+  },
+  "style_blueprint": {
+    "shared_patterns": [
+      "Large creator face occupying one side or multiple repeated face panels",
+      "Very short text, set extremely large",
+      "Simple background with high contrast and low clutter",
+      "One dominant idea per thumbnail",
+      "Bold editorial framing rather than polished corporate SaaS styling"
+    ],
+    "face_position": "Usually right side or left side, tightly cropped near the edges",
+    "subject_scale": "Large head-and-shoulders crop, often 35% to 50% of the frame",
+    "text_size_and_placement": "Text dominates the center-left or center block; 2 to 4 words is ideal",
+    "background_tone": "Mostly dark or flat simple color fields, occasionally one soft accent color",
+    "color_contrast": "White text on dark background, with one accent color such as blue, red, or yellow",
+    "prop_icon_usage": "Minimal but functional; charts, call imagery, warning icons, or UI snippets only when they reinforce the message",
+    "expression_intensity": "Concerned, surprised, or skeptical rather than neutral",
+    "visual_density": "Low to medium density; the best reference is the cleanest one",
+    "composition_pattern": "Face plus oversized text block; optional secondary prop to explain the topic faster",
+    "reduced_influence_reference": "Reference 2 is useful for emotional intensity but weaker as a layout base because the four-panel composition is busier than the other two."
+  },
+  "concepts": [
+    {
+      "file": "thumbnail_01.png",
+      "hook": "Show the problem in the bluntest possible way",
+      "thumbnail_text": "SOUNDS ROBOTIC",
+      "angle": "Direct diagnosis of why production voice agents fail naturalness",
+      "composition": "Dark background, creator face on the left, large rounded text card on the right, small red waveform or phone icon as supporting signal",
+      "creator_pose": "Skeptical half-smile or concerned look toward the viewer",
+      "supporting_visual": "Red waveform or call-status accent",
+      "emotion": "Confident critique",
+      "why_it_should_click": "Fastest read and closest to the strongest reference structure"
+    },
+    {
+      "file": "thumbnail_02.png",
+      "hook": "Position the video as a systems explanation",
+      "thumbnail_text": "WHY THEY BREAK",
+      "angle": "The thumbnail implies there are hidden technical reasons behind the bad voice quality",
+      "composition": "Creator on the right, bold white text on a dark left panel, small yellow warning badge and subtle conversation waveform",
+      "creator_pose": "Pointing or open-hand explanation gesture if the crop allows it",
+      "supporting_visual": "Warning triangle or subtle waveform bars",
+      "emotion": "Analytical urgency",
+      "why_it_should_click": "Balances curiosity with a more technical tone"
+    },
+    {
+      "file": "thumbnail_03.png",
+      "hook": "Contrast the promise of AI voice with the disappointing reality",
+      "thumbnail_text": "NOT HUMAN YET",
+      "angle": "Frames the video as a reality check on current voice agents",
+      "composition": "Lighter accent background inspired by reference 3, creator face on the left or right, thick blue text slab and small robot or phone icon crossed with a red accent",
+      "creator_pose": "Slightly surprised or disappointed expression",
+      "supporting_visual": "Simple robot/phone cue and accent underline",
+      "emotion": "Surprised realism",
+      "why_it_should_click": "Creates contrast with the darker options while staying inside the reference language"
+    }
+  ],
+  "risks": [
+    "No target video URL was available, so the brief is inferred from the supplied title only.",
+    "The creator photo is currently available only as a chat attachment, not yet as a local file for rendering."
+  ]
+}

@@ -45,10 +45,10 @@ export function LeadCreateForm({
   }
 
   if (!open) {
-    return (
+      return (
       <button className="button" onClick={() => setOpen(true)}>
         <Plus size={17} />
-        Nou lead
+        New lead
       </button>
     );
   }
@@ -57,23 +57,23 @@ export function LeadCreateForm({
     <section className="panel" style={{ marginBottom: 18 }}>
       <form onSubmit={onSubmit} className="grid grid-3">
         <div className="field">
-          <label>Nom</label>
+          <label>First name</label>
           <input name="firstName" />
         </div>
         <div className="field">
-          <label>Cognom</label>
+          <label>Last name</label>
           <input name="lastName" />
         </div>
         <div className="field">
-          <label>Empresa</label>
+          <label>Company</label>
           <input name="company" />
         </div>
         <div className="field">
-          <label>Càrrec</label>
+          <label>Job title</label>
           <input name="jobTitle" />
         </div>
         <div className="field">
-          <label>Telèfon</label>
+          <label>Phone</label>
           <input name="phone" />
         </div>
         <div className="field">
@@ -81,7 +81,7 @@ export function LeadCreateForm({
           <input name="email" type="email" />
         </div>
         <div className="field">
-          <label>Origen</label>
+          <label>Source</label>
           <input name="source" />
         </div>
         <div className="field">
@@ -95,7 +95,7 @@ export function LeadCreateForm({
           </select>
         </div>
         <div className="field">
-          <label>Valor deal</label>
+          <label>Deal value</label>
           <input
             name="dealValueOverride"
             type="number"
@@ -104,15 +104,15 @@ export function LeadCreateForm({
             placeholder={formatCurrencyInputFromCents(defaultDealValueCents)}
           />
           <small className="muted">
-            Si el deixes buit, s&apos;aplicarà el ticket mitjà de {formatCurrencyFromCents(defaultDealValueCents)}.
+            If left blank, the default deal size of {formatCurrencyFromCents(defaultDealValueCents)} will be used.
           </small>
         </div>
         <div className="toolbar" style={{ alignSelf: "end", marginBottom: 0 }}>
           <button className="button" disabled={loading}>
-            Crear
+            Create
           </button>
           <button className="ghost-button" type="button" onClick={() => setOpen(false)}>
-            Cancel·lar
+            Cancel
           </button>
         </div>
       </form>

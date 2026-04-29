@@ -33,7 +33,7 @@ export async function POST(request: Request) {
   return withUser(async (user) => {
     if (user.role !== "ADMIN") return forbidden();
     const parsed = stageSchema.safeParse(await request.json());
-    if (!parsed.success) return NextResponse.json({ error: "Stage no vàlid" }, { status: 400 });
+    if (!parsed.success) return NextResponse.json({ error: "Invalid stage" }, { status: 400 });
 
     const last = await prisma.pipelineStage.findFirst({ orderBy: { position: "desc" } });
     const stage = await prisma.pipelineStage.create({

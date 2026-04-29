@@ -11,6 +11,7 @@ import {
   splitKnownLeadFieldValues,
   type NativeImportLeadFieldType
 } from "@/lib/leads/native-import-fields";
+import { extractFaviconUrl } from "@/lib/leads/enriched-field-helpers";
 import { displayLeadName } from "@/lib/leads/normalize";
 import {
   formatCurrencyFromCents,
@@ -70,13 +71,39 @@ function valueOrDash(value?: string | null) {
   return value?.trim() || "-";
 }
 
+function renderExternalValue(value?: string | null) {
+  const text = value?.trim();
+  if (!text) return "-";
+  if (!/^https?:\/\//i.test(text)) return text;
+
+  const favicon = extractFaviconUrl(text);
+
+  return (
+    <a href={text} target="_blank" rel="noreferrer">
+      {favicon ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img className="favicon" src={favicon} alt="" width={14} height={14} />
+      ) : null}
+      <span>{text}</span>
+    </a>
+  );
+}
+
+function humanizeKey(value: string) {
+  return value
+    .split(/[_-]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
 function toNullableString(value: FormDataEntryValue | null) {
   const trimmed = String(value ?? "").trim();
   return trimmed || null;
 }
 
 function formatCustomValue(value: unknown) {
-  if (typeof value === "boolean") return value ? "Sí" : "No";
+  if (typeof value === "boolean") return value ? "Yes" : "No";
   if (value === null || value === undefined || value === "") return "-";
   if (typeof value === "object") return JSON.stringify(value);
   return String(value);
@@ -141,7 +168,7 @@ function buildCustomRows(definitions: CustomFieldDefinition[], customFields: Rec
     rows.push({
       id: key,
       key,
-      label: definition?.label ?? key,
+      label: definition?.label ?? humanizeKey(key),
       type,
       value: inputValue(value, type),
       removable: true
@@ -159,7 +186,7 @@ function renderFieldInput(
     return (
       <label className="inline-checkbox">
         <input type="checkbox" checked={Boolean(row.value)} onChange={(event) => onChange(event.target.checked)} />
-        Actiu
+        Active
       </label>
     );
   }
@@ -304,7 +331,7 @@ export function LeadPropertiesForm({
 
     setLoading(false);
     if (!response.ok) {
-      setError("No s'han pogut guardar les propietats.");
+      setError("Could not save the properties.");
       return;
     }
 
@@ -318,29 +345,29 @@ export function LeadPropertiesForm({
     return (
       <section className="panel grid">
         <div className="section-title-row">
-          <h2>Dades del lead</h2>
+          <h2>Lead details</h2>
           <button className="ghost-button" type="button" onClick={() => setEditing(true)}>
-            Editar
+            Edit
           </button>
         </div>
         <div className="grid grid-2">
-          <div><span className="muted">Nom</span><br />{valueOrDash(displayLeadName(lead))}</div>
-          <div><span className="muted">Empresa</span><br />{valueOrDash(lead.company)}</div>
-          <div><span className="muted">Càrrec</span><br />{valueOrDash(lead.jobTitle)}</div>
-          <div><span className="muted">Telèfon</span><br />{valueOrDash(lead.phone)}</div>
+          <div><span className="muted">Name</span><br />{valueOrDash(displayLeadName(lead))}</div>
+          <div><span className="muted">Company</span><br />{valueOrDash(lead.company)}</div>
+          <div><span className="muted">Job title</span><br />{valueOrDash(lead.jobTitle)}</div>
+          <div><span className="muted">Phone</span><br />{valueOrDash(lead.phone)}</div>
           <div><span className="muted">Email</span><br />{valueOrDash(lead.email)}</div>
-          <div><span className="muted">Web</span><br />{valueOrDash(lead.website)}</div>
+          <div><span className="muted">Website</span><br />{renderExternalValue(lead.website)}</div>
           <div><span className="muted">LinkedIn</span><br />{valueOrDash(lead.linkedinUrl)}</div>
-          <div><span className="muted">Origen</span><br />{valueOrDash(lead.source)}</div>
+          <div><span className="muted">Source</span><br />{valueOrDash(lead.source)}</div>
           <div><span className="muted">Owner</span><br />{valueOrDash(lead.ownerName)}</div>
-          <div><span className="muted">Seguiment</span><br />{valueOrDash(lead.nextFollowUpAt)}</div>
+          <div><span className="muted">Follow-up</span><br />{valueOrDash(lead.nextFollowUpAt)}</div>
           <div>
-            <span className="muted">Valor deal</span>
+            <span className="muted">Deal value</span>
             <br />
             {formatCurrencyFromCents(effectiveDealValueCents)}
             <br />
             <small className="muted">
-              {lead.dealValueOverrideCents === null ? "Ticket mitja de settings" : "Valor especific del lead"}
+              {lead.dealValueOverrideCents === null ? "Default value from settings" : "Lead-specific value"}
             </small>
           </div>
         </div>
@@ -360,13 +387,13 @@ export function LeadPropertiesForm({
             ) : null}
             {competitorValue ? (
               <div className="callout callout--competitor">
-                <span className="callout__label">Competidors / context</span>
+                <span className="callout__label">Competitors / context</span>
                 <span>{competitorValue}</span>
               </div>
             ) : null}
           </div>
         ) : null}
-        <h3>Camps enriquits</h3>
+        <h3>Enriched fields</h3>
         <div className="grid grid-2">
           {nativeFieldEntries.map((field) => (
             <div key={field.key} style={field.multiline ? { gridColumn: "1 / -1" } : undefined}>
@@ -375,24 +402,24 @@ export function LeadPropertiesForm({
               {renderEnrichedField(field.key, field.value, field.type)}
             </div>
           ))}
-          {!nativeFieldEntries.length ? <p className="muted">Sense dades enriquides.</p> : null}
+          {!nativeFieldEntries.length ? <p className="muted">No enriched data.</p> : null}
         </div>
         {objectionValue ? (
           <details className="objection-details">
-            <summary>Preparació d&apos;objeccions</summary>
+            <summary>Objection prep</summary>
             <div className="objection-details__body">{objectionValue}</div>
           </details>
         ) : null}
-        <h3>Altres camps personalitzats</h3>
+        <h3>Other custom fields</h3>
         <div className="grid grid-2">
           {customFieldEntries.map(([key, value]) => (
             <div key={key}>
-              <span className="muted">{otherCustomFieldDefinitions.find((field) => field.key === key)?.label ?? key}</span>
+              <span className="muted">{otherCustomFieldDefinitions.find((field) => field.key === key)?.label ?? humanizeKey(key)}</span>
               <br />
               {formatCustomValue(value)}
             </div>
           ))}
-          {!customFieldEntries.length ? <p className="muted">Sense altres camps personalitzats.</p> : null}
+          {!customFieldEntries.length ? <p className="muted">No other custom fields.</p> : null}
         </div>
       </section>
     );
@@ -402,42 +429,42 @@ export function LeadPropertiesForm({
     <section className="panel">
       <form onSubmit={onSubmit} className="grid">
         <div className="section-title-row">
-          <h2>Editar dades del lead</h2>
+          <h2>Edit lead details</h2>
           <div className="toolbar" style={{ marginBottom: 0 }}>
             <button className="button" disabled={loading}>
               <Save size={16} />
-              Guardar
+              Save
             </button>
             <button className="ghost-button" type="button" onClick={resetForm} disabled={loading}>
               <X size={16} />
-              Cancel·lar
+              Cancel
             </button>
           </div>
         </div>
         {error ? <p className="error">{error}</p> : null}
         <div className="grid grid-2">
           <div className="field">
-            <label>Nom</label>
+            <label>First name</label>
             <input name="firstName" defaultValue={lead.firstName ?? ""} />
           </div>
           <div className="field">
-            <label>Cognom</label>
+            <label>Last name</label>
             <input name="lastName" defaultValue={lead.lastName ?? ""} />
           </div>
           <div className="field">
-            <label>Nom complet</label>
+            <label>Full name</label>
             <input name="fullName" defaultValue={lead.fullName ?? ""} />
           </div>
           <div className="field">
-            <label>Empresa</label>
+            <label>Company</label>
             <input name="company" defaultValue={lead.company ?? ""} />
           </div>
           <div className="field">
-            <label>Càrrec</label>
+            <label>Job title</label>
             <input name="jobTitle" defaultValue={lead.jobTitle ?? ""} />
           </div>
           <div className="field">
-            <label>Telèfon</label>
+            <label>Phone</label>
             <input name="phone" defaultValue={lead.phone ?? ""} />
           </div>
           <div className="field">
@@ -445,7 +472,7 @@ export function LeadPropertiesForm({
             <input name="email" type="email" defaultValue={lead.email ?? ""} />
           </div>
           <div className="field">
-            <label>Web</label>
+            <label>Website</label>
             <input name="website" type="url" defaultValue={lead.website ?? ""} />
           </div>
           <div className="field">
@@ -453,15 +480,15 @@ export function LeadPropertiesForm({
             <input name="linkedinUrl" type="url" defaultValue={lead.linkedinUrl ?? ""} />
           </div>
           <div className="field">
-            <label>Origen</label>
+            <label>Source</label>
             <input name="source" defaultValue={lead.source ?? ""} />
           </div>
           <div className="field">
-            <label>Proper seguiment</label>
+            <label>Next follow-up</label>
             <input name="nextFollowUpAt" type="datetime-local" defaultValue={lead.nextFollowUpAt ?? ""} />
           </div>
           <div className="field">
-            <label>Valor deal</label>
+            <label>Deal value</label>
             <input
               name="dealValueOverride"
               type="number"
@@ -471,7 +498,7 @@ export function LeadPropertiesForm({
               placeholder={formatCurrencyInputFromCents(defaultDealValueCents)}
             />
             <small className="muted">
-              Deixa&apos;l buit per usar el ticket mitjà de {formatCurrencyFromCents(defaultDealValueCents)}.
+              Leave blank to use the default deal size of {formatCurrencyFromCents(defaultDealValueCents)}.
             </small>
           </div>
         </div>
@@ -482,7 +509,7 @@ export function LeadPropertiesForm({
           <label><input type="checkbox" name="emailOptOut" defaultChecked={lead.emailOptOut} /> Email opt-out</label>
         </div>
         <div className="section-title-row">
-          <h3>Camps enriquits</h3>
+          <h3>Enriched fields</h3>
         </div>
         <div className="grid grid-2">
           {nativeRows.map((row) => (
@@ -493,17 +520,17 @@ export function LeadPropertiesForm({
           ))}
         </div>
         <div className="section-title-row">
-          <h3>Altres camps personalitzats</h3>
+          <h3>Other custom fields</h3>
           <button className="ghost-button" type="button" onClick={addCustomRow}>
             <Plus size={16} />
-            Afegir camp
+            Add field
           </button>
         </div>
         <div className="grid">
           {customRows.map((row) => (
             <div className="custom-field-row" key={row.id}>
               <div className="field">
-                <label>Camp</label>
+                <label>Field</label>
                 <input
                   value={row.removable ? row.key : row.label}
                   disabled={!row.removable}
@@ -511,13 +538,13 @@ export function LeadPropertiesForm({
                 />
               </div>
               <div className="field">
-                <label>Valor</label>
+                <label>Value</label>
                 {renderFieldInput({ type: row.type, value: row.value }, (value) => updateCustomRow(row.id, { value }))}
               </div>
               <button
                 className="ghost-button icon-button"
                 type="button"
-                aria-label="Eliminar custom field"
+                aria-label="Delete custom field"
                 onClick={() => removeCustomRow(row.id)}
                 disabled={!row.removable}
               >
@@ -525,7 +552,7 @@ export function LeadPropertiesForm({
               </button>
             </div>
           ))}
-          {!customRows.length ? <p className="muted">Sense altres camps personalitzats.</p> : null}
+          {!customRows.length ? <p className="muted">No other custom fields.</p> : null}
         </div>
       </form>
     </section>

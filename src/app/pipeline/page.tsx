@@ -38,7 +38,7 @@ export default async function PipelinePage() {
       <div className="page-header">
         <div>
           <h1>Pipeline</h1>
-          <p>Arrossega leads entre stages per fer seguiment del valor econòmic.</p>
+          <p>Drag leads between stages to track revenue value.</p>
         </div>
       </div>
       <PipelineBoard

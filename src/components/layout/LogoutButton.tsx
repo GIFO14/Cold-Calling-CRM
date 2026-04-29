@@ -18,7 +18,7 @@ export function LogoutButton() {
   return (
     <button onClick={logout} disabled={loading}>
       <LogOut size={17} />
-      Sortir
+      Sign out
     </button>
   );
 }

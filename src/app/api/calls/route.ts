@@ -12,7 +12,7 @@ const schema = z.object({
 export async function POST(request: Request) {
   return withUser(async (user) => {
     const parsed = schema.safeParse(await request.json());
-    if (!parsed.success) return NextResponse.json({ error: "Trucada no vàlida" }, { status: 400 });
+    if (!parsed.success) return NextResponse.json({ error: "Invalid call" }, { status: 400 });
 
     const lead = await prisma.lead.findFirst({
       where: {
@@ -20,9 +20,9 @@ export async function POST(request: Request) {
         ...(user.role === "ADMIN" ? {} : { ownerId: user.id })
       }
     });
-    if (!lead) return NextResponse.json({ error: "Lead no trobat" }, { status: 404 });
+    if (!lead) return NextResponse.json({ error: "Lead not found" }, { status: 404 });
     if (lead.phoneInvalid || lead.phoneOptOut) {
-      return NextResponse.json({ error: "Aquest lead no es pot trucar" }, { status: 409 });
+      return NextResponse.json({ error: "This lead cannot be called" }, { status: 409 });
     }
 
     const call = await prisma.callLog.create({
@@ -45,7 +45,7 @@ export async function POST(request: Request) {
         leadId: lead.id,
         userId: user.id,
         type: "CALL_STARTED",
-        title: "Trucada iniciada",
+        title: "Call started",
         body: parsed.data.phoneDialed,
         metadata: { callLogId: call.id }
       }

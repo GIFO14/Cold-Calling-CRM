@@ -90,14 +90,14 @@ export function StageSettingsList({
         >
           <input type="hidden" name="id" value={stage.id} />
           <div className="field">
-            <label>Ordre</label>
+            <label>Order</label>
             <span
               className="drag-handle"
               draggable={!isReordering}
               role="button"
               tabIndex={0}
-              title="Arrossegar per ordenar"
-              aria-label={`Arrossegar ${stage.name} per ordenar`}
+              title="Drag to reorder"
+              aria-label={`Drag ${stage.name} to reorder`}
               aria-disabled={isReordering}
               onDragStart={(event) => {
                 setDraggingId(stage.id);
@@ -113,7 +113,7 @@ export function StageSettingsList({
             </span>
           </div>
           <div className="field">
-            <label>Nom</label>
+            <label>Name</label>
             <input name="name" defaultValue={stage.name} required />
           </div>
           <div className="field">
@@ -121,28 +121,28 @@ export function StageSettingsList({
             <input name="color" type="color" defaultValue={stage.color} required />
           </div>
           <label style={{ alignSelf: "end" }}>
-            <input type="checkbox" name="isWon" defaultChecked={stage.isWon} /> Guanyat
+            <input type="checkbox" name="isWon" defaultChecked={stage.isWon} /> Won
           </label>
           <label style={{ alignSelf: "end" }}>
-            <input type="checkbox" name="isLost" defaultChecked={stage.isLost} /> Perdut
+            <input type="checkbox" name="isLost" defaultChecked={stage.isLost} /> Lost
           </label>
           <label>
-            <input type="checkbox" name="active" defaultChecked={stage.active} /> Actiu
+            <input type="checkbox" name="active" defaultChecked={stage.active} /> Active
           </label>
-          <button className="ghost-button">Guardar estat</button>
+          <button className="ghost-button">Save stage</button>
         </form>
       ))}
       <form action={createStageAction} className="grid grid-3">
         <div className="field">
-          <label>Nou estat</label>
-          <input name="name" placeholder="Nom de l'estat" />
+          <label>New stage</label>
+          <input name="name" placeholder="Stage name" />
         </div>
         <div className="field">
           <label>Color</label>
           <input name="color" type="color" defaultValue="#0f766e" />
         </div>
         <button className="button" style={{ alignSelf: "end" }}>
-          Afegir estat
+          Add stage
         </button>
       </form>
     </div>

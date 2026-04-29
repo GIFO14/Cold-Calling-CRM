@@ -11,7 +11,7 @@ export default async function LoginPage() {
       <section className="login-card">
         <h1>Cold Calling CRM</h1>
         <p className="muted">
-          Accés privat per gestionar leads, pipeline, imports CSV i trucades WebRTC.
+          Private access to manage leads, pipeline, CSV imports, and WebRTC calls.
         </p>
         <LoginForm />
       </section>

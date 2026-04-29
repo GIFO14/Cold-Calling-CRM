@@ -77,7 +77,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
             <h1>{displayLeadName(lead)}</h1>
             <LeadBadges customFields={customFields} jobTitle={lead.jobTitle} />
           </div>
-          <p>{lead.company ?? "Sense empresa"} {lead.jobTitle ? `· ${lead.jobTitle}` : ""}</p>
+          <p>{lead.company ?? "No company"} {lead.jobTitle ? `· ${lead.jobTitle}` : ""}</p>
         </div>
         <LeadCallButton
           leadId={lead.id}
@@ -119,13 +119,13 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
       </div>
       <div className="grid grid-2" style={{ marginTop: 18 }}>
         <section className="panel">
-          <h2>Historial</h2>
+          <h2>History</h2>
           <div className="timeline">
             {lead.activities.map((activity) => (
               <div className="timeline-item" key={activity.id}>
                 <strong>{activity.title}</strong>
                 <div className="muted">
-                  {format(activity.createdAt, "dd/MM/yyyy HH:mm")} · {activity.user?.name ?? "Sistema"}
+                  {format(activity.createdAt, "dd/MM/yyyy HH:mm")} · {activity.user?.name ?? "System"}
                 </div>
                 {activity.body ? <p>{activity.body}</p> : null}
               </div>
@@ -133,14 +133,14 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           </div>
         </section>
         <section className="panel">
-          <h2>Trucades</h2>
+          <h2>Calls</h2>
           <div className="table-wrap">
             <table>
               <thead>
                 <tr>
-                  <th>Data</th>
-                  <th>Telèfon</th>
-                  <th>Estat</th>
+                  <th>Date</th>
+                  <th>Phone</th>
+                  <th>Status</th>
                   <th>Outcome</th>
                 </tr>
               </thead>

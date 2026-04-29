@@ -28,14 +28,14 @@ async function main() {
   });
 
   const stages = [
-    { name: "Nou", color: "#0f766e", isDefault: true },
-    { name: "Per trucar", color: "#155eef" },
-    { name: "Trucat", color: "#7a5af8" },
-    { name: "Interessat", color: "#f79009" },
-    { name: "Seguiment", color: "#6172f3" },
-    { name: "Reunió agendada", color: "#12b76a" },
-    { name: "Guanyat", color: "#039855", isWon: true },
-    { name: "Perdut", color: "#b42318", isLost: true }
+    { name: "New", color: "#0f766e", isDefault: true },
+    { name: "To call", color: "#155eef" },
+    { name: "Called", color: "#7a5af8" },
+    { name: "Interested", color: "#f79009" },
+    { name: "Follow-up", color: "#6172f3" },
+    { name: "Meeting booked", color: "#12b76a" },
+    { name: "Won", color: "#039855", isWon: true },
+    { name: "Lost", color: "#b42318", isLost: true }
   ];
 
   for (const [position, stage] of stages.entries()) {
@@ -109,7 +109,7 @@ async function main() {
       lastName: "Serra",
       fullName: "Laura Serra",
       company: "Acme Industrial",
-      jobTitle: "Directora comercial",
+      jobTitle: "Sales Director",
       phone: "+34900111222",
       phoneNormalized: "+34900111222",
       email: "laura@example.com",

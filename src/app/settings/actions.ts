@@ -46,7 +46,7 @@ export async function saveBusinessSettings(formData: FormData) {
 
   const defaultDealValueCents = parseCurrencyInputToCents(formData.get("defaultDealValue"));
   if (defaultDealValueCents === null) {
-    throw new Error("Ticket mitja no valid");
+    throw new Error("Invalid default deal size");
   }
 
   const existing = await prisma.businessSettings.findFirst();

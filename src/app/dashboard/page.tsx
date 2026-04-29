@@ -142,21 +142,21 @@ export default async function DashboardPage() {
       <div className="page-header">
         <div>
           <h1>Dashboard</h1>
-          <p>Mètriques comercials, activitat recent i seguiment del valor del pipeline i dels ingressos guanyats.</p>
+          <p>Sales metrics, recent activity, and tracking for pipeline value and won revenue.</p>
         </div>
       </div>
       <div className="grid grid-4" style={{ marginBottom: 18 }}>
         <StatCard label="Total leads" value={totalLeads} />
-        <StatCard label="Nous 7 dies" value={newLeadsWeek} />
-        <StatCard label="Valor pipeline" value={formatCurrencyFromCents(pipelineValueCents)} />
-        <StatCard label="Ingressos guanyats" value={formatCurrencyFromCents(wonRevenueCents)} />
-        <StatCard label="Trucades 7 dies" value={calls.length} />
-        <StatCard label="Resposta aprox." value={`${responseRate}%`} />
+        <StatCard label="New in 7 days" value={newLeadsWeek} />
+        <StatCard label="Pipeline value" value={formatCurrencyFromCents(pipelineValueCents)} />
+        <StatCard label="Won revenue" value={formatCurrencyFromCents(wonRevenueCents)} />
+        <StatCard label="Calls in 7 days" value={calls.length} />
+        <StatCard label="Response rate" value={`${responseRate}%`} />
         <StatCard label="Win rate" value={`${winRate}%`} />
         <StatCard
-          label="Ticket mitjà"
+          label="Average deal size"
           value={formatCurrencyFromCents(defaultDealValueCents)}
-          hint="Valor per defecte de settings"
+          hint="Default value from settings"
         />
       </div>
       <DashboardCharts
@@ -175,21 +175,21 @@ export default async function DashboardPage() {
         }))}
       />
       <div className="grid grid-2" style={{ marginTop: 18 }}>
-        <StatCard label="Deals guanyades" value={wonCount} />
-        <StatCard label="Valor perdut" value={formatCurrencyFromCents(lostValueCents)} />
+        <StatCard label="Deals won" value={wonCount} />
+        <StatCard label="Lost value" value={formatCurrencyFromCents(lostValueCents)} />
       </div>
       <section className="panel" style={{ marginTop: 18 }}>
-        <h2>Imports recents</h2>
+        <h2>Recent imports</h2>
         <div className="table-wrap">
           <table>
             <thead>
               <tr>
-                <th>Fitxer</th>
-                <th>Usuari</th>
-                <th>Creats</th>
-                <th>Actualitzats</th>
-                <th>Errors</th>
-                <th>Estat</th>
+                <th>File</th>
+                <th>User</th>
+                <th>Created</th>
+                <th>Updated</th>
+                <th>Error count</th>
+                <th>Status</th>
               </tr>
             </thead>
             <tbody>

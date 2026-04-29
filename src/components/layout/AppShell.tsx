@@ -8,7 +8,7 @@ const navItems = [
   { href: "/leads", label: "Leads", icon: Users },
   { href: "/pipeline", label: "Pipeline", icon: Kanban },
   { href: "/imports", label: "Imports", icon: Upload },
-  { href: "/settings", label: "Configuració", icon: Settings }
+  { href: "/settings", label: "Settings", icon: Settings }
 ];
 
 export function AppShell({ user, children }: { user: SessionUser; children: React.ReactNode }) {
@@ -17,7 +17,7 @@ export function AppShell({ user, children }: { user: SessionUser; children: Reac
       <aside className="sidebar">
         <div className="brand">
           <strong>Cold Calling CRM</strong>
-          <span>Leads, pipeline i trucades</span>
+          <span>Leads, pipeline, and calling</span>
         </div>
         <nav className="nav">
           {navItems.map((item) => {

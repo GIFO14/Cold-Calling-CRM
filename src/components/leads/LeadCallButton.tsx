@@ -16,30 +16,30 @@ export function LeadCallButton({
   disabled?: boolean;
 }) {
   const { activeCall, isBusy, startCall, hangup } = useCall();
-  const [status, setStatus] = useState("Preparat");
+  const [status, setStatus] = useState("Ready");
 
   const isCurrentLead = activeCall?.leadId === leadId;
   const hasAnotherActiveCall = Boolean(activeCall && activeCall.leadId !== leadId);
   const hasOngoingCall = Boolean(activeCall && !["ended", "failed"].includes(activeCall.status));
   const showCallButton = !hasOngoingCall;
   const showHangupButton = hasOngoingCall && isCurrentLead;
-  const liveStatus = isCurrentLead ? activeCall?.statusLabel : hasAnotherActiveCall ? "Una altra trucada activa" : status;
+  const liveStatus = isCurrentLead ? activeCall?.statusLabel : hasAnotherActiveCall ? "Another call is active" : status;
 
   async function handleStartCall() {
     if (!phone) return;
 
     try {
-      setStatus("Connectant");
+      setStatus("Connecting");
       await startCall({ leadId, leadLabel, phone });
-      setStatus("Trucant");
+      setStatus("Dialing");
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Error de trucada");
+      setStatus(error instanceof Error ? error.message : "Call error");
     }
   }
 
   async function handleHangup() {
     await hangup();
-    setStatus("Trucada finalitzada");
+    setStatus("Call ended");
   }
 
   return (
@@ -55,12 +55,12 @@ export function LeadCallButton({
           {showHangupButton ? (
             <button className="danger-button" onClick={handleHangup} disabled={!isCurrentLead || !activeCall || isBusy}>
               <PhoneOff size={16} />
-              Penjar
+              Hang up
             </button>
           ) : null}
         </div>
       ) : null}
-      <small className="muted">{disabled ? "Trucada bloquejada per estat del telèfon" : liveStatus}</small>
+      <small className="muted">{disabled ? "Calling blocked by phone status" : liveStatus}</small>
     </div>
   );
 }

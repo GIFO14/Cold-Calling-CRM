@@ -31,7 +31,7 @@ export function DashboardCharts({
     <>
       <div className="grid grid-3">
         <section className="panel">
-          <h2>Leads per stage</h2>
+          <h2>Leads by stage</h2>
           <div style={{ height: 260 }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={stageOverview}>
@@ -49,7 +49,7 @@ export function DashboardCharts({
           </div>
         </section>
         <section className="panel">
-          <h2>Valor per stage</h2>
+          <h2>Value by stage</h2>
           <div style={{ height: 260 }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={stageOverview}>
@@ -67,7 +67,7 @@ export function DashboardCharts({
           </div>
         </section>
         <section className="panel">
-          <h2>Trucades per dia</h2>
+          <h2>Calls per day</h2>
           <div style={{ height: 260 }}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={callsByDay}>
@@ -83,7 +83,7 @@ export function DashboardCharts({
       </div>
       <div className="grid grid-2" style={{ marginTop: 18 }}>
         <section className="panel">
-          <h2>Ingressos guanyats 30 dies</h2>
+          <h2>Won revenue in 30 days</h2>
           <div style={{ height: 260 }}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={wonRevenueByDay}>
@@ -97,7 +97,7 @@ export function DashboardCharts({
           </div>
         </section>
         <section className="panel">
-          <h2>Outcomes 30 dies</h2>
+          <h2>Outcomes in 30 days</h2>
           <div style={{ height: 260 }}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>

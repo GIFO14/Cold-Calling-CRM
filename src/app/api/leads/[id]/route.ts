@@ -51,7 +51,7 @@ export async function GET(_request: Request, { params }: Params) {
       }
     });
 
-    if (!lead) return NextResponse.json({ error: "Lead no trobat" }, { status: 404 });
+    if (!lead) return NextResponse.json({ error: "Lead not found" }, { status: 404 });
     return NextResponse.json({
       lead: {
         ...lead,
@@ -70,10 +70,10 @@ export async function PATCH(request: Request, { params }: Params) {
     const existing = await prisma.lead.findFirst({
       where: { id, ...(user.role === "ADMIN" ? {} : { ownerId: user.id }) }
     });
-    if (!existing) return NextResponse.json({ error: "Lead no trobat" }, { status: 404 });
+    if (!existing) return NextResponse.json({ error: "Lead not found" }, { status: 404 });
 
     const parsed = updateLeadSchema.safeParse(await request.json());
-    if (!parsed.success) return NextResponse.json({ error: "Lead no vàlid" }, { status: 400 });
+    if (!parsed.success) return NextResponse.json({ error: "Invalid lead" }, { status: 400 });
 
     const { customFields, ...data } = parsed.data;
     const updateData: Prisma.LeadUpdateInput = {
@@ -94,7 +94,7 @@ export async function PATCH(request: Request, { params }: Params) {
         leadId: id,
         userId: user.id,
         type: "FIELD_UPDATED",
-        title: "Lead actualitzat"
+        title: "Lead updated"
       }
     });
 

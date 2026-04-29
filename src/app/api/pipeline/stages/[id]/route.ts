@@ -26,7 +26,7 @@ export async function PATCH(request: Request, { params }: Params) {
     if (user.role !== "ADMIN") return forbidden();
     const { id } = await params;
     const parsed = schema.safeParse(await request.json());
-    if (!parsed.success) return NextResponse.json({ error: "Stage no vàlid" }, { status: 400 });
+    if (!parsed.success) return NextResponse.json({ error: "Invalid stage" }, { status: 400 });
 
     const stage = await prisma.pipelineStage.update({
       where: { id },

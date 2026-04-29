@@ -22,7 +22,7 @@ function makeDefaultCustomMapping(column: string): RestorableCsvColumnMapping {
     column,
     mode: "custom",
     customKey: makeCustomKey(column),
-    customLabel: column.trim() || "Camp personalitzat"
+    customLabel: column.trim() || "Custom field"
   };
 }
 
@@ -89,7 +89,7 @@ export function CsvImporter() {
   async function handleSelectedFile(nextFile: File) {
     if (!nextFile.name.toLowerCase().endsWith(".csv")) {
       setMessageTone("error");
-      setMessage("Només pots importar fitxers CSV.");
+      setMessage("You can only import CSV files.");
       return;
     }
 
@@ -108,7 +108,7 @@ export function CsvImporter() {
 
     if (!response.ok) {
       setMessageTone("error");
-      setMessage("No s'ha pogut llegir el CSV.");
+      setMessage("Could not read the CSV.");
       return;
     }
 
@@ -128,7 +128,7 @@ export function CsvImporter() {
             mode: "custom",
             customKey:
               currentChoice.mode === "custom" ? currentChoice.customKey : makeCustomKey(item.column),
-            customLabel: currentChoice.mode === "custom" ? currentChoice.customLabel : item.column.trim() || "Camp personalitzat"
+            customLabel: currentChoice.mode === "custom" ? currentChoice.customLabel : item.column.trim() || "Custom field"
           };
           return item.mode === "ignore" ? { ...item, previousMapping: nextChoice } : { ...nextChoice, previousMapping: nextChoice };
         }
@@ -171,12 +171,12 @@ export function CsvImporter() {
     setLoading(false);
     if (!response.ok) {
       setMessageTone("error");
-      setMessage("La importació ha fallat.");
+      setMessage("Import failed.");
       return;
     }
     const data = await response.json();
     setMessage(
-      `Import complet: ${data.importBatch.createdRows} creats, ${data.importBatch.updatedRows} actualitzats, ${data.importBatch.errorRows} errors.`
+      `Import complete: ${data.importBatch.createdRows} created, ${data.importBatch.updatedRows} updated, ${data.importBatch.errorRows} errors.`
     );
   }
 
@@ -238,24 +238,24 @@ export function CsvImporter() {
         >
           <Upload size={17} />
           <div className="dropzone-copy">
-            <strong>Arrossega aquí el CSV</strong>
-            <span>o fes clic per seleccionar-lo</span>
+            <strong>Drag the CSV here</strong>
+            <span>or click to select it</span>
           </div>
         </div>
         {file ? <span className="badge">{file.name}</span> : null}
-        {preview ? <span className="muted">{preview.totalRows} files detectades</span> : null}
+        {preview ? <span className="muted">{preview.totalRows} rows detected</span> : null}
       </div>
       {message ? <p className={messageTone}>{message}</p> : null}
       {preview ? (
         <>
-          <p className="muted table-note">Desmarca una columna per ignorar-la i evitar que es crei com a custom field.</p>
+          <p className="muted table-note">Uncheck a column to ignore it and prevent it from being created as a custom field.</p>
           <div className="table-wrap">
             <table>
               <thead>
                 <tr>
-                  <th>Columna CSV</th>
-                  <th>Importar</th>
-                  <th>Importar com</th>
+                  <th>CSV column</th>
+                  <th>Import</th>
+                  <th>Import as</th>
                 </tr>
               </thead>
               <tbody>
@@ -269,7 +269,7 @@ export function CsvImporter() {
                           checked={item.mode !== "ignore"}
                           onChange={(event) => updateImportEnabled(index, event.target.checked)}
                         />
-                        <span>{item.mode === "ignore" ? "No" : "Sí"}</span>
+                        <span>{item.mode === "ignore" ? "No" : "Yes"}</span>
                       </label>
                     </td>
                     <td>
@@ -282,14 +282,14 @@ export function CsvImporter() {
                         onChange={(event) => updateMapping(index, event.target.value)}
                         disabled={item.mode === "ignore"}
                       >
-                        <option value="custom">Camp personalitzat</option>
+                        <option value="custom">Custom field</option>
                         {PRESET_LEAD_FIELDS.map((field) => (
                           <option key={field} value={field}>
                             {getPresetLeadFieldLabel(field)}
                           </option>
                         ))}
                       </select>
-                      {item.mode === "ignore" ? <span className="badge">Ignorada</span> : null}
+                      {item.mode === "ignore" ? <span className="badge">Ignored</span> : null}
                     </td>
                   </tr>
                 ))}
@@ -317,7 +317,7 @@ export function CsvImporter() {
             </table>
           </div>
           <button className="button" onClick={runImport} disabled={loading}>
-            Importar leads
+            Import leads
           </button>
         </>
       ) : null}

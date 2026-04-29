@@ -19,24 +19,24 @@ export default async function ImportsPage() {
     <AppShell user={user}>
       <div className="page-header">
         <div>
-          <h1>Importar leads</h1>
-          <p>Mapeig lliure de columnes CSV a camps CRM, custom fields o columnes ignorades.</p>
+          <h1>Import leads</h1>
+          <p>Flexible mapping from CSV columns to CRM fields, custom fields, or ignored columns.</p>
         </div>
       </div>
       <CsvImporter />
       <section className="panel" style={{ marginTop: 18 }}>
-        <h2>Historial d'importacions</h2>
+        <h2>Import history</h2>
         <div className="table-wrap">
           <table>
             <thead>
               <tr>
-                <th>Fitxer</th>
-                <th>Files</th>
-                <th>Creats</th>
-                <th>Actualitzats</th>
-                <th>Omesos</th>
-                <th>Errors</th>
-                <th>Per</th>
+                <th>File</th>
+                <th>Rows</th>
+                <th>Created</th>
+                <th>Updated</th>
+                <th>Skipped</th>
+                <th>Error count</th>
+                <th>By</th>
               </tr>
             </thead>
             <tbody>

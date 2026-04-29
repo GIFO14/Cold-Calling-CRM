@@ -3,6 +3,7 @@ import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { withUser } from "@/lib/auth/api";
+import { normalizeCompanySize, parsePriorityTier } from "@/lib/leads/enriched-field-helpers";
 import { getEffectiveDealValueCents } from "@/lib/money";
 import { normalizeEmail, normalizePhone } from "@/lib/leads/normalize";
 
@@ -28,10 +29,17 @@ export async function GET(request: Request) {
     const q = url.searchParams.get("q")?.trim();
     const stageId = url.searchParams.get("stageId") || undefined;
     const ownerId = url.searchParams.get("ownerId") || undefined;
+    const priorityFilter = parsePriorityTier(url.searchParams.get("priority"));
+    const companySizeFilter = normalizeCompanySize(url.searchParams.get("companySize"));
 
-    const leads = await prisma.lead.findMany({
+    const leadCandidates = await prisma.lead.findMany({
       where: {
         ...(user.role === "ADMIN" ? {} : { ownerId: user.id }),
+        NOT: {
+          stage: {
+            is: { isLost: true }
+          }
+        },
         ...(stageId ? { stageId } : {}),
         ...(ownerId && user.role === "ADMIN" ? { ownerId } : {}),
         ...(q
@@ -52,9 +60,21 @@ export async function GET(request: Request) {
         stage: true,
         callLogs: { orderBy: { startedAt: "desc" }, take: 1 }
       },
-      orderBy: { updatedAt: "desc" },
-      take: 200
+      orderBy: { updatedAt: "desc" }
     });
+
+    const leads = leadCandidates
+      .filter((lead) => {
+        const fields =
+          lead.customFields && typeof lead.customFields === "object" && !Array.isArray(lead.customFields)
+            ? (lead.customFields as Record<string, unknown>)
+            : null;
+
+        if (priorityFilter && parsePriorityTier(fields?.priority_tier) !== priorityFilter) return false;
+        if (companySizeFilter && normalizeCompanySize(fields?.mida_empresa) !== companySizeFilter) return false;
+        return true;
+      })
+      .slice(0, 200);
 
     return NextResponse.json({ leads });
   });
@@ -65,7 +85,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const parsed = createLeadSchema.safeParse(body);
     if (!parsed.success) {
-      return NextResponse.json({ error: "Lead no vàlid" }, { status: 400 });
+      return NextResponse.json({ error: "Invalid lead" }, { status: 400 });
     }
 
     const businessSettings = await prisma.businessSettings.findFirst({
@@ -97,7 +117,7 @@ export async function POST(request: Request) {
         leadId: lead.id,
         userId: user.id,
         type: "FIELD_UPDATED",
-        title: "Lead creat manualment"
+        title: "Lead created manually"
       }
     });
 

@@ -217,7 +217,7 @@ export async function importLeads({ filename, rows, mapping, userId }: ImportLea
             leadId: existing.id,
             userId,
             type: "IMPORT_UPDATED",
-            title: "Lead actualitzat per importació",
+            title: "Lead updated from import",
             body: filename,
             metadata: { importBatchId: importBatch.id, rowNumber: index + 2 }
           }
@@ -242,7 +242,7 @@ export async function importLeads({ filename, rows, mapping, userId }: ImportLea
             leadId: created.id,
             userId,
             type: "IMPORT_CREATED",
-            title: "Lead creat per importació",
+            title: "Lead created from import",
             body: filename,
             metadata: { importBatchId: importBatch.id, rowNumber: index + 2 }
           }
@@ -256,7 +256,7 @@ export async function importLeads({ filename, rows, mapping, userId }: ImportLea
           importBatchId: importBatch.id,
           rowNumber: index + 2,
           rawRow: row,
-          message: error instanceof Error ? error.message : "Error desconegut"
+          message: error instanceof Error ? error.message : "Unknown error"
         }
       });
     }

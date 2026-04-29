@@ -75,15 +75,15 @@ async function patchCallStatus(callId: string, status: "RINGING" | "ANSWERED" | 
 
 async function ensureMicrophoneAccess() {
   if (!window.isSecureContext) {
-    throw new Error("La trucada WebRTC necessita HTTPS o localhost per accedir al micròfon.");
+    throw new Error("WebRTC calling requires HTTPS or localhost to access the microphone.");
   }
 
   if (typeof RTCPeerConnection === "undefined") {
-    throw new Error("Aquest navegador no és compatible amb trucades WebRTC.");
+    throw new Error("This browser does not support WebRTC calling.");
   }
 
   if (!navigator.mediaDevices?.getUserMedia) {
-    throw new Error("La trucada WebRTC necessita HTTPS o localhost per accedir al micròfon.");
+    throw new Error("WebRTC calling requires HTTPS or localhost to access the microphone.");
   }
 
   let stream: MediaStream | null = null;
@@ -101,42 +101,42 @@ function normalizeCallError(error: unknown) {
   if (error instanceof DOMException) {
     if (error.name === "NotAllowedError" || error.name === "PermissionDeniedError") {
       if (error.message.toLowerCase().includes("dismiss")) {
-        return new Error("Permís de micròfon descartat. Torna-ho a intentar i accepta'l.");
+        return new Error("Microphone permission was dismissed. Try again and allow it.");
       }
 
-      return new Error("Has de permetre l'accés al micròfon per iniciar la trucada.");
+      return new Error("You must allow microphone access to start the call.");
     }
 
     if (error.name === "NotFoundError" || error.name === "DevicesNotFoundError") {
-      return new Error("No s'ha detectat cap micròfon disponible.");
+      return new Error("No microphone was detected.");
     }
 
     if (error.name === "NotReadableError" || error.name === "TrackStartError") {
-      return new Error("El micròfon està ocupat o no es pot utilitzar ara.");
+      return new Error("The microphone is busy or unavailable right now.");
     }
 
     if (error.name === "SecurityError") {
-      return new Error("L'accés al micròfon està bloquejat pel navegador.");
+      return new Error("Microphone access is blocked by the browser.");
     }
   }
 
   const message = error instanceof Error ? error.message.toLowerCase() : "";
 
   if (message.includes("permission dismissed") || message.includes("permission denied")) {
-    return new Error("Has de permetre l'accés al micròfon per iniciar la trucada.");
+    return new Error("You must allow microphone access to start the call.");
   }
 
   if (message.includes("insecure context") || message.includes("media devices not available")) {
-    return new Error("La trucada WebRTC necessita HTTPS o localhost per accedir al micròfon.");
+    return new Error("WebRTC calling requires HTTPS or localhost to access the microphone.");
   }
 
-  return error instanceof Error ? error : new Error("Error de trucada");
+  return error instanceof Error ? error : new Error("Call error");
 }
 
 function buildDialedNumber(phone: string, outboundDialPrefix?: string | null) {
   const normalizedPhone = normalizePhone(phone);
   if (!normalizedPhone) {
-    throw new Error("El telèfon del lead no és vàlid.");
+    throw new Error("The lead's phone number is invalid.");
   }
 
   const prefix = (outboundDialPrefix ?? "").trim();
@@ -163,6 +163,11 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const userRef = useRef<SimpleUser | null>(null);
   const activeCallRef = useRef<ActiveCall | null>(null);
+  const ringtoneContextRef = useRef<AudioContext | null>(null);
+  const ringtoneGainRef = useRef<GainNode | null>(null);
+  const ringtoneOscillatorsRef = useRef<OscillatorNode[]>([]);
+  const ringtoneLoopRef = useRef<number | null>(null);
+  const ringtoneEchoRef = useRef<number | null>(null);
   const [activeCall, setActiveCall] = useState<ActiveCall | null>(null);
   const [isMuted, setIsMuted] = useState(false);
   const [isHeld, setIsHeld] = useState(false);
@@ -180,6 +185,98 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     setOutcome("NO_ANSWER");
     setNotes("");
   }, []);
+
+  const stopRingingTone = useCallback(() => {
+    if (ringtoneLoopRef.current) {
+      window.clearInterval(ringtoneLoopRef.current);
+      ringtoneLoopRef.current = null;
+    }
+
+    if (ringtoneEchoRef.current) {
+      window.clearTimeout(ringtoneEchoRef.current);
+      ringtoneEchoRef.current = null;
+    }
+
+    const context = ringtoneContextRef.current;
+    const gain = ringtoneGainRef.current;
+    const oscillators = ringtoneOscillatorsRef.current;
+    if (!context || !gain) return;
+
+    const now = context.currentTime;
+    gain.gain.cancelScheduledValues(now);
+    gain.gain.setValueAtTime(Math.max(gain.gain.value, 0.0001), now);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
+
+    window.setTimeout(() => {
+      oscillators.forEach((oscillator) => {
+        try {
+          oscillator.stop();
+        } catch {
+          // Ignore duplicate stops while tearing down.
+        }
+        oscillator.disconnect();
+      });
+      gain.disconnect();
+      ringtoneGainRef.current = null;
+      ringtoneOscillatorsRef.current = [];
+    }, 160);
+  }, []);
+
+  const ensureRingtoneContext = useCallback(async () => {
+    if (typeof window === "undefined") return null;
+
+    const AudioContextConstructor =
+      window.AudioContext ??
+      (window as Window & typeof globalThis & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+
+    if (!AudioContextConstructor) return null;
+
+    if (!ringtoneContextRef.current) {
+      ringtoneContextRef.current = new AudioContextConstructor();
+    }
+
+    if (ringtoneContextRef.current.state === "suspended") {
+      await ringtoneContextRef.current.resume();
+    }
+
+    return ringtoneContextRef.current;
+  }, []);
+
+  const startRingingTone = useCallback(async () => {
+    const context = await ensureRingtoneContext();
+    if (!context || ringtoneGainRef.current) return;
+
+    const gain = context.createGain();
+    gain.gain.value = 0.0001;
+    gain.connect(context.destination);
+
+    const oscillators = [440, 480].map((frequency) => {
+      const oscillator = context.createOscillator();
+      oscillator.type = "sine";
+      oscillator.frequency.value = frequency;
+      oscillator.connect(gain);
+      oscillator.start();
+      return oscillator;
+    });
+
+    const triggerBurst = () => {
+      const now = context.currentTime;
+      gain.gain.cancelScheduledValues(now);
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.045, now + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.42);
+    };
+
+    triggerBurst();
+    ringtoneEchoRef.current = window.setTimeout(triggerBurst, 700);
+    ringtoneLoopRef.current = window.setInterval(() => {
+      triggerBurst();
+      ringtoneEchoRef.current = window.setTimeout(triggerBurst, 700);
+    }, 2800);
+
+    ringtoneGainRef.current = gain;
+    ringtoneOscillatorsRef.current = oscillators;
+  }, [ensureRingtoneContext]);
 
   const markCallFinished = useCallback(
     async (status: "COMPLETED" | "FAILED" | "CANCELED", statusLabel: string) => {
@@ -224,7 +321,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
           onCallCreated: () => {
             const current = activeCallRef.current;
             if (!current) return;
-            syncActiveCall({ ...current, status: "dialing", statusLabel: "Trucant" });
+            syncActiveCall({ ...current, status: "dialing", statusLabel: "Dialing" });
             void patchCallStatus(current.callId, "RINGING");
           },
           onCallAnswered: () => {
@@ -235,19 +332,19 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
               ...current,
               answeredAt,
               status: "active",
-              statusLabel: "En trucada"
+              statusLabel: "In call"
             });
             void patchCallStatus(current.callId, "ANSWERED");
           },
           onCallHangup: () => {
-            void markCallFinished("COMPLETED", "Trucada finalitzada");
+            void markCallFinished("COMPLETED", "Call ended");
           },
           onCallHold: (held) => {
             setIsHeld(held);
           },
           onServerDisconnect: (error) => {
             if (!activeCallRef.current) return;
-            void markCallFinished(error ? "FAILED" : "CANCELED", error ? "Error de connexio" : "Trucada cancel·lada");
+            void markCallFinished(error ? "FAILED" : "CANCELED", error ? "Connection error" : "Call canceled");
           }
         }
       });
@@ -263,7 +360,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   const startCall = useCallback(
     async ({ leadId, leadLabel, phone }: StartCallInput) => {
       if (activeCallRef.current && !["ended", "failed"].includes(activeCallRef.current.status)) {
-        throw new Error("Ja tens una trucada activa.");
+        throw new Error("You already have an active call.");
       }
 
       setIsBusy(true);
@@ -274,16 +371,17 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       try {
         // Request mic access before the first awaited network call so the browser
         // keeps the permission prompt tied to the original click interaction.
+        await ensureRingtoneContext();
         await ensureMicrophoneAccess();
 
         const configResponse = await fetch("/api/telephony/config");
         if (!configResponse.ok) {
-          throw new Error("No s'ha pogut carregar la configuració de telefonia.");
+          throw new Error("Could not load telephony settings.");
         }
 
         const config = (await configResponse.json()) as TelephonyConfig;
         if (!config.enabled) {
-          throw new Error("Configura PBX i extensio WebRTC a Configuracio.");
+          throw new Error("Set up PBX and the WebRTC extension in Settings.");
         }
 
         const dialed = buildDialedNumber(phone, config.outboundDialPrefix);
@@ -295,7 +393,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
 
         if (!callResponse.ok) {
           const data = (await callResponse.json().catch(() => null)) as { error?: string } | null;
-          throw new Error(data?.error ?? "No s'ha pogut crear el registre de trucada.");
+          throw new Error(data?.error ?? "Could not create the call log.");
         }
 
         const { call } = (await callResponse.json()) as { call: { id: string } };
@@ -310,13 +408,13 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
           startedAt: Date.now(),
           answeredAt: null,
           status: "connecting",
-          statusLabel: "Connectant SIP"
+          statusLabel: "Connecting SIP"
         });
 
         const simpleUser = await ensureSipUser(config);
         const current = activeCallRef.current;
         if (current) {
-          syncActiveCall({ ...current, status: "dialing", statusLabel: "Trucant" });
+          syncActiveCall({ ...current, status: "dialing", statusLabel: "Dialing" });
         }
         await simpleUser.call(`sip:${dialed}@${config.sipDomain}`);
       } catch (error) {
@@ -332,10 +430,13 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         setIsMuted(false);
         throw normalizeCallError(error);
       } finally {
+        if (!activeCallRef.current || activeCallRef.current.answeredAt || ["ended", "failed"].includes(activeCallRef.current.status)) {
+          stopRingingTone();
+        }
         setIsBusy(false);
       }
     },
-    [ensureSipUser, resetComposer, syncActiveCall]
+    [ensureRingtoneContext, ensureSipUser, resetComposer, stopRingingTone, syncActiveCall]
   );
 
   const hangup = useCallback(async () => {
@@ -345,7 +446,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     setIsBusy(true);
     try {
       await userRef.current?.hangup();
-      await markCallFinished("COMPLETED", "Trucada finalitzada");
+      await markCallFinished("COMPLETED", "Call ended");
     } finally {
       setIsBusy(false);
     }
@@ -410,10 +511,23 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   }, [activeCall]);
 
   useEffect(() => {
+    const isRinging = Boolean(activeCall && !activeCall.answeredAt && !["ended", "failed"].includes(activeCall.status));
+
+    if (isRinging) {
+      void startRingingTone();
+      return;
+    }
+
+    stopRingingTone();
+  }, [activeCall, startRingingTone, stopRingingTone]);
+
+  useEffect(() => {
     return () => {
+      stopRingingTone();
+      void ringtoneContextRef.current?.close();
       void userRef.current?.disconnect();
     };
-  }, []);
+  }, [stopRingingTone]);
 
   const value = useMemo<CallContextValue>(
     () => ({
@@ -440,6 +554,13 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   const showLiveControls = activeCall?.status === "active";
   const showOutcomeEditor = activeCall?.status === "ended" || activeCall?.status === "failed";
   const bannerCall = activeCall;
+  const isWaitingForAnswer = Boolean(bannerCall && !bannerCall.answeredAt && !showOutcomeEditor);
+  const timerLabel = bannerCall?.answeredAt ? "Durada" : "Estat";
+  const timerValue = bannerCall?.answeredAt
+    ? formatDuration(durationSeconds)
+    : isWaitingForAnswer
+      ? "ringing..."
+      : (bannerCall?.statusLabel ?? "");
 
   return (
     <CallContext.Provider value={value}>
@@ -452,15 +573,15 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
               <PhoneOutgoing size={18} />
             </div>
             <div className="call-banner__identity">
-              <strong>{bannerCall.leadLabel ?? "Trucada activa"}</strong>
+              <strong>{bannerCall.leadLabel ?? "Active call"}</strong>
               <div className="call-banner__meta">
                 <span>{bannerCall.phone}</span>
                 <span>{bannerCall.statusLabel}</span>
               </div>
             </div>
             <div className="call-banner__timer">
-              <span>Durada</span>
-              <strong>{formatDuration(durationSeconds)}</strong>
+              <span>{timerLabel}</span>
+              <strong>{timerValue}</strong>
             </div>
           </div>
 
@@ -469,15 +590,15 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
               <UserRound size={16} />
               Lead
             </Link>
-            <button className="ghost-button icon-button" onClick={toggleMute} disabled={!showLiveControls} title="Silenciar">
+            <button className="ghost-button icon-button" onClick={toggleMute} disabled={!showLiveControls} title="Mute">
               {isMuted ? <MicOff size={16} /> : <Mic size={16} />}
             </button>
-            <button className="ghost-button icon-button" onClick={toggleHold} disabled={!showLiveControls || isBusy} title="Pausa">
+            <button className="ghost-button icon-button" onClick={toggleHold} disabled={!showLiveControls || isBusy} title="Hold">
               {isHeld ? <Play size={16} /> : <Pause size={16} />}
             </button>
             <button className="danger-button" onClick={hangup} disabled={showOutcomeEditor || isBusy}>
               <PhoneOff size={16} />
-              Penjar
+              Hang up
             </button>
           </div>
 
@@ -498,7 +619,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
                 <textarea value={notes} onChange={(event) => setNotes(event.target.value)} />
               </div>
               <button className="button" onClick={saveOutcome} disabled={isBusy}>
-                Guardar outcome
+                Save outcome
               </button>
             </div>
           ) : null}
@@ -511,7 +632,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
 export function useCall() {
   const context = useContext(CallContext);
   if (!context) {
-    throw new Error("useCall s'ha d'usar dins de CallProvider.");
+    throw new Error("useCall must be used within CallProvider.");
   }
 
   return context;

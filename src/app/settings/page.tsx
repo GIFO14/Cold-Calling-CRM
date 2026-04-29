@@ -25,8 +25,8 @@ export default async function SettingsPage() {
     <AppShell user={user}>
       <div className="page-header">
         <div>
-          <h1>Configuració</h1>
-          <p>PBX WebRTC, extensió SIP del CRM i usuaris interns.</p>
+          <h1>Settings</h1>
+          <p>WebRTC PBX, CRM SIP extension, and internal users.</p>
         </div>
       </div>
       <div className="grid grid-2">
@@ -44,27 +44,27 @@ export default async function SettingsPage() {
               </div>
               <div className="grid grid-2">
                 <div className="field">
-                  <label>Prefix sortida</label>
+                  <label>Outbound prefix</label>
                   <input name="outboundDialPrefix" defaultValue={pbx?.outboundDialPrefix ?? ""} />
                 </div>
                 <div className="field">
-                  <label>País per defecte</label>
+                  <label>Default country</label>
                   <input name="defaultCountryCode" defaultValue={pbx?.defaultCountryCode ?? "ES"} />
                 </div>
               </div>
               <label>
-                <input type="checkbox" name="enabled" defaultChecked={pbx?.enabled ?? false} /> Activat
+                <input type="checkbox" name="enabled" defaultChecked={pbx?.enabled ?? false} /> Enabled
               </label>
-              <button className="button">Guardar PBX</button>
+              <button className="button">Save PBX</button>
             </form>
           </section>
         ) : null}
         {user.role === "ADMIN" ? (
           <section className="panel">
-            <h2>Configuració comercial</h2>
+            <h2>Business settings</h2>
             <form action={saveBusinessSettings} className="grid">
               <div className="field">
-                <label>Ticket mitjà per deal</label>
+                <label>Default deal size</label>
                 <input
                   name="defaultDealValue"
                   type="number"
@@ -76,48 +76,48 @@ export default async function SettingsPage() {
                 />
               </div>
               <p className="muted" style={{ margin: 0 }}>
-                Valor per defecte que s&apos;aplica a tots els leads si no tenen un import propi.
+                Default value applied to all leads that do not have their own amount.
               </p>
-              <button className="button">Guardar ticket mitjà</button>
+              <button className="button">Save default deal size</button>
             </form>
           </section>
         ) : null}
         <section className="panel">
-          <h2>La meva extensió WebRTC</h2>
+          <h2>My WebRTC extension</h2>
           <form action={saveTelephonySettings} className="grid">
             <input type="hidden" name="userId" value={user.id} />
             <div className="field">
               <label>SIP username</label>
               <input name="sipUsername" defaultValue={myTelephony?.sipUsername ?? "702"} required />
             </div>
-            <div className="field">
-              <label>SIP password</label>
-              <input name="sipPassword" type="password" placeholder={myTelephony ? "Deixa en blanc per mantenir-la" : ""} />
-            </div>
-            <div className="grid grid-2">
               <div className="field">
-                <label>Extensió</label>
-                <input name="sipExtension" defaultValue={myTelephony?.sipExtension ?? "702"} required />
+                <label>SIP password</label>
+                <input name="sipPassword" type="password" placeholder={myTelephony ? "Leave blank to keep it" : ""} />
               </div>
+              <div className="grid grid-2">
+                <div className="field">
+                <label>Extension</label>
+                  <input name="sipExtension" defaultValue={myTelephony?.sipExtension ?? "702"} required />
+                </div>
               <div className="field">
                 <label>Display name</label>
                 <input name="sipDisplayName" defaultValue={myTelephony?.sipDisplayName ?? user.name} />
               </div>
             </div>
             <label>
-              <input type="checkbox" name="enabled" defaultChecked={myTelephony?.enabled ?? true} /> Activada
+              <input type="checkbox" name="enabled" defaultChecked={myTelephony?.enabled ?? true} /> Enabled
             </label>
-            <button className="button">Guardar extensió</button>
+            <button className="button">Save extension</button>
           </form>
         </section>
       </div>
       {user.role === "ADMIN" ? (
         <div className="grid grid-2" style={{ marginTop: 18 }}>
           <section className="panel">
-            <h2>Crear usuari</h2>
+            <h2>Create user</h2>
             <form action={createUser} className="grid">
               <div className="field">
-                <label>Nom</label>
+                <label>Name</label>
                 <input name="name" required />
               </div>
               <div className="field">
@@ -125,29 +125,29 @@ export default async function SettingsPage() {
                 <input name="email" type="email" required />
               </div>
               <div className="field">
-                <label>Contrasenya</label>
+                <label>Password</label>
                 <input name="password" type="password" minLength={8} required />
               </div>
               <div className="field">
-                <label>Rol</label>
+                <label>Role</label>
                 <select name="role" defaultValue="AGENT">
                   <option value="AGENT">AGENT</option>
                   <option value="ADMIN">ADMIN</option>
                 </select>
               </div>
-              <button className="button">Crear usuari</button>
+              <button className="button">Create user</button>
             </form>
           </section>
           <section className="panel">
-            <h2>Usuaris</h2>
+            <h2>Users</h2>
             <div className="table-wrap">
               <table>
                 <thead>
                   <tr>
-                    <th>Nom</th>
+                    <th>Name</th>
                     <th>Email</th>
-                    <th>Rol</th>
-                    <th>Extensió</th>
+                    <th>Role</th>
+                    <th>Extension</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -167,7 +167,7 @@ export default async function SettingsPage() {
       ) : null}
       {user.role === "ADMIN" ? (
         <section className="panel" style={{ marginTop: 18 }}>
-          <h2>Estats del pipeline</h2>
+          <h2>Pipeline stages</h2>
           <StageSettingsList stages={stages} saveStageAction={saveStage} createStageAction={createStage} />
         </section>
       ) : null}

@@ -97,7 +97,7 @@ export function LeadsTable({
 
     if (!response.ok) {
       const data = (await response.json().catch(() => null)) as { error?: string } | null;
-      setError(data?.error ?? "No s'han pogut actualitzar els leads.");
+      setError(data?.error ?? "Could not update the leads.");
       return;
     }
 
@@ -107,7 +107,7 @@ export function LeadsTable({
 
   async function deleteSelection() {
     if (!hasSelection) return;
-    if (!window.confirm(`Vols esborrar ${selectedIds.length} lead${selectedIds.length > 1 ? "s" : ""}?`)) {
+    if (!window.confirm(`Delete ${selectedIds.length} lead${selectedIds.length > 1 ? "s" : ""}?`)) {
       return;
     }
 
@@ -124,7 +124,7 @@ export function LeadsTable({
 
     if (!response.ok) {
       const data = (await response.json().catch(() => null)) as { error?: string } | null;
-      setError(data?.error ?? "No s'han pogut esborrar els leads.");
+      setError(data?.error ?? "Could not delete the leads.");
       return;
     }
 
@@ -137,11 +137,11 @@ export function LeadsTable({
       {hasSelection ? (
         <div className="bulk-actions">
           <strong className="bulk-actions__summary">
-            {selectedIds.length} lead{selectedIds.length > 1 ? "s" : ""} seleccionat{selectedIds.length > 1 ? "s" : ""}
+            {selectedIds.length} lead{selectedIds.length > 1 ? "s" : ""} selected
           </strong>
           <div className="bulk-actions__controls">
             <div className="field">
-              <label>Canviar stage</label>
+              <label>Change stage</label>
               <select value={bulkStageId} onChange={(event) => setBulkStageId(event.target.value)} disabled={loadingAction !== null}>
                 {stages.map((stage) => (
                   <option key={stage.id} value={stage.id}>
@@ -151,13 +151,13 @@ export function LeadsTable({
               </select>
             </div>
             <button className="button" type="button" onClick={changeStageForSelection} disabled={loadingAction !== null || !bulkStageId}>
-              Aplicar
+              Apply
             </button>
             <button className="danger-button" type="button" onClick={deleteSelection} disabled={loadingAction !== null}>
-              Borrar
+              Delete
             </button>
             <button className="ghost-button" type="button" onClick={() => setSelectedIds([])} disabled={loadingAction !== null}>
-              Netejar
+              Clear
             </button>
           </div>
         </div>
@@ -173,13 +173,13 @@ export function LeadsTable({
                 <input
                   ref={selectAllRef}
                   type="checkbox"
-                  aria-label="Seleccionar tots els leads"
+                  aria-label="Select all leads"
                   checked={allSelected}
                   onChange={toggleAll}
                 />
               </th>
               <th>Lead</th>
-              <th>Contacte</th>
+              <th>Contact</th>
               <th>Stage</th>
               <th>Flags</th>
               <th>Call</th>
@@ -189,7 +189,7 @@ export function LeadsTable({
             {leads.length === 0 ? (
               <tr>
                 <td colSpan={6} className="muted">
-                  No hi ha leads amb aquests filtres.
+                  No leads match these filters.
                 </td>
               </tr>
             ) : (
@@ -201,7 +201,7 @@ export function LeadsTable({
                     <td className="checkbox-cell">
                       <input
                         type="checkbox"
-                        aria-label={`Seleccionar ${displayLeadName(lead)}`}
+                        aria-label={`Select ${displayLeadName(lead)}`}
                         checked={isSelected}
                         onChange={() => toggleLead(lead.id)}
                       />
@@ -223,7 +223,7 @@ export function LeadsTable({
                       </div>
                     </td>
                     <td>
-                      <div>{lead.phone ?? "Sense telèfon"}</div>
+                      <div>{lead.phone ?? "No phone"}</div>
                       <div className="muted">{lead.email}</div>
                     </td>
                     <td>

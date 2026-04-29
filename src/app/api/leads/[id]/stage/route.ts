@@ -10,16 +10,16 @@ export async function PATCH(request: Request, { params }: Params) {
   return withUser(async (user) => {
     const { id } = await params;
     const body = schema.safeParse(await request.json());
-    if (!body.success) return NextResponse.json({ error: "Stage no vàlid" }, { status: 400 });
+    if (!body.success) return NextResponse.json({ error: "Invalid stage" }, { status: 400 });
 
     const existing = await prisma.lead.findFirst({
       where: { id, ...(user.role === "ADMIN" ? {} : { ownerId: user.id }) },
       include: { stage: true }
     });
-    if (!existing) return NextResponse.json({ error: "Lead no trobat" }, { status: 404 });
+    if (!existing) return NextResponse.json({ error: "Lead not found" }, { status: 404 });
 
     const stage = await prisma.pipelineStage.findUnique({ where: { id: body.data.stageId } });
-    if (!stage) return NextResponse.json({ error: "Stage no trobat" }, { status: 404 });
+    if (!stage) return NextResponse.json({ error: "Stage not found" }, { status: 404 });
 
     const lead = await prisma.lead.update({
       where: { id },
@@ -31,8 +31,8 @@ export async function PATCH(request: Request, { params }: Params) {
         leadId: id,
         userId: user.id,
         type: "STAGE_CHANGED",
-        title: "Stage canviat",
-        body: `${existing.stage?.name ?? "Sense stage"} -> ${stage.name}`,
+        title: "Stage changed",
+        body: `${existing.stage?.name ?? "No stage"} -> ${stage.name}`,
         metadata: { fromStageId: existing.stageId, toStageId: stage.id }
       }
     });

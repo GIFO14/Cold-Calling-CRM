@@ -45,21 +45,21 @@ export type CsvColumnMapping =
     };
 
 const coreFieldLabels: Record<CoreLeadField, string> = {
-  firstName: "Nom",
-  lastName: "Cognom",
-  fullName: "Nom complet",
-  company: "Empresa",
-  jobTitle: "Càrrec",
-  phone: "Telèfon",
-  phoneInvalid: "Telèfon invàlid",
-  phoneOptOut: "No trucar",
+  firstName: "First name",
+  lastName: "Last name",
+  fullName: "Full name",
+  company: "Company",
+  jobTitle: "Job title",
+  phone: "Phone",
+  phoneInvalid: "Invalid phone",
+  phoneOptOut: "Do not call",
   email: "Email",
-  emailInvalid: "Email invàlid",
-  emailOptOut: "Baixa d'email",
-  website: "Web",
+  emailInvalid: "Invalid email",
+  emailOptOut: "Email opt-out",
+  website: "Website",
   linkedinUrl: "LinkedIn",
-  source: "Origen",
-  nextFollowUpAt: "Proper seguiment"
+  source: "Source",
+  nextFollowUpAt: "Next follow-up"
 };
 
 const coreAliases: Record<CoreLeadField, string[]> = {
@@ -139,7 +139,7 @@ export function inferCsvMapping(headers: string[]): CsvColumnMapping[] {
       column,
       mode: "custom",
       customKey: makeCustomKey(column),
-      customLabel: column.trim() || "Camp personalitzat"
+      customLabel: column.trim() || "Custom field"
     };
   });
 }

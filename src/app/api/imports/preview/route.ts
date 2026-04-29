@@ -8,7 +8,7 @@ export async function POST(request: Request) {
     const formData = await request.formData();
     const file = formData.get("file");
     if (!(file instanceof File)) {
-      return NextResponse.json({ error: "CSV no trobat" }, { status: 400 });
+      return NextResponse.json({ error: "CSV not found" }, { status: 400 });
     }
 
     const parsed = parseCsvText(await file.text());

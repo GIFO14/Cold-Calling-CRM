@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { createSessionToken, SESSION_COOKIE } from "@/lib/auth/session";
+import {
+  createSessionToken,
+  SESSION_COOKIE,
+  shouldUseSecureCookies
+} from "@/lib/auth/session";
 import { verifyPassword } from "@/lib/auth/password";
 
 const loginSchema = z.object({
@@ -13,7 +17,7 @@ export async function POST(request: Request) {
   const body = await request.json();
   const parsed = loginSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Credencials no vàlides" }, { status: 400 });
+    return NextResponse.json({ error: "Invalid credentials" }, { status: 400 });
   }
 
   const user = await prisma.user.findUnique({
@@ -21,12 +25,12 @@ export async function POST(request: Request) {
   });
 
   if (!user?.active) {
-    return NextResponse.json({ error: "Credencials no vàlides" }, { status: 401 });
+    return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
   }
 
   const valid = await verifyPassword(parsed.data.password, user.passwordHash);
   if (!valid) {
-    return NextResponse.json({ error: "Credencials no vàlides" }, { status: 401 });
+    return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
   }
 
   const token = await createSessionToken({
@@ -40,7 +44,7 @@ export async function POST(request: Request) {
   response.cookies.set(SESSION_COOKIE, token, {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure: shouldUseSecureCookies(),
     path: "/",
     maxAge: 60 * 60 * 8
   });

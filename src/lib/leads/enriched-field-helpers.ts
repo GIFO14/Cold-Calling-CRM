@@ -157,6 +157,12 @@ export function toStringValue(value: unknown): string | null {
   return null;
 }
 
+export function normalizeCompanySize(value: unknown): string | null {
+  const text = toStringValue(value)?.trim();
+  if (!text) return null;
+  return text.replace(/[–—]/g, "-").replace(/\s*-\s*/g, "-").replace(/\s+/g, " ");
+}
+
 export function splitResearchSources(raw: unknown): string[] {
   if (typeof raw !== "string") return [];
   return raw

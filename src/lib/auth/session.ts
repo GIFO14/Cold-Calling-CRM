@@ -11,6 +11,14 @@ export type SessionUser = {
   role: "ADMIN" | "AGENT";
 };
 
+export function shouldUseSecureCookies() {
+  if (process.env.COOKIE_SECURE === "false") {
+    return false;
+  }
+
+  return process.env.NODE_ENV === "production";
+}
+
 function getSecret() {
   const secret =
     process.env.SESSION_SECRET ??

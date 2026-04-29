@@ -1,10 +1,8 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export function LoginForm() {
-  const router = useRouter();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -25,12 +23,11 @@ export function LoginForm() {
 
     setLoading(false);
     if (!response.ok) {
-      setError("Email o contrasenya incorrectes.");
+      setError("Incorrect email or password.");
       return;
     }
 
-    router.push("/dashboard");
-    router.refresh();
+    window.location.href = "/dashboard";
   }
 
   return (
@@ -40,12 +37,12 @@ export function LoginForm() {
         <input name="email" type="email" defaultValue="admin@example.com" required />
       </div>
       <div className="field">
-        <label>Contrasenya</label>
+        <label>Password</label>
         <input name="password" type="password" defaultValue="admin1234" required />
       </div>
       {error ? <div className="error">{error}</div> : null}
       <button className="button" type="submit" disabled={loading}>
-        {loading ? "Entrant..." : "Entrar"}
+        {loading ? "Signing in..." : "Sign in"}
       </button>
     </form>
   );

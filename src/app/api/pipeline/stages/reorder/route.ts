@@ -17,7 +17,7 @@ export async function POST(request: Request) {
   return withUser(async (user) => {
     if (user.role !== "ADMIN") return forbidden();
     const parsed = schema.safeParse(await request.json());
-    if (!parsed.success) return NextResponse.json({ error: "Ordre no vàlid" }, { status: 400 });
+    if (!parsed.success) return NextResponse.json({ error: "Invalid order" }, { status: 400 });
 
     await prisma.$transaction(
       parsed.data.ids.map((id, position) =>

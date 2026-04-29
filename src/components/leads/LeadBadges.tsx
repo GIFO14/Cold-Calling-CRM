@@ -25,24 +25,24 @@ function icpBadgeText(score: number): { text: string; tier: IcpBucket } {
 function freshnessTitle(freshness: SignalFreshness): string {
   switch (freshness) {
     case "fresh":
-      return "Senyal recent (<7 dies)";
+      return "Recent signal (<7 days)";
     case "stale":
-      return "Senyal d'entre 7 i 30 dies";
+      return "Signal from 7 to 30 days ago";
     case "cold":
-      return "Senyal antic (>30 dies)";
+      return "Old signal (>30 days)";
   }
 }
 
 function priorityTitle(tier: PriorityTier): string {
   switch (tier) {
     case "top":
-      return "Prioritat TOP — trucar ja";
+      return "TOP priority — call now";
     case "high":
-      return "Prioritat alta";
+      return "High priority";
     case "mid":
-      return "Prioritat mitjana";
+      return "Medium priority";
     case "low":
-      return "Prioritat baixa";
+      return "Low priority";
   }
 }
 
@@ -80,7 +80,7 @@ export function LeadBadges({ customFields, jobTitle, compact, responsive }: Lead
       {icpBucket && icpScoreNum !== null && Number.isFinite(icpScoreNum) ? (
         <span
           className={`badge badge--icp-${icpBucket}`}
-          title={`Puntuació ICP ${icpScoreNum}/15`}
+          title={`ICP score ${icpScoreNum}/15`}
         >
           {icpBadgeText(icpScoreNum).text}
         </span>
@@ -94,7 +94,7 @@ export function LeadBadges({ customFields, jobTitle, compact, responsive }: Lead
         />
       ) : null}
       {dm ? (
-        <span className="badge badge--dm" title="Decisor únic — founder/CEO o empresa petita">
+        <span className="badge badge--dm" title="Sole decision-maker — founder/CEO or small company">
           👑 Sole DM
         </span>
       ) : null}

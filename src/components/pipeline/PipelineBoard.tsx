@@ -187,8 +187,8 @@ export function PipelineBoard({
   async function deleteStage(stage: Stage) {
     const message =
       stage.leads.length > 0
-        ? `Eliminar "${stage.name}"? Els ${stage.leads.length} leads d'aquest stage es quedaran sense stage.`
-        : `Eliminar "${stage.name}"?`;
+        ? `Delete "${stage.name}"? The ${stage.leads.length} lead${stage.leads.length === 1 ? "" : "s"} in this stage will be left without a stage.`
+        : `Delete "${stage.name}"?`;
 
     if (!window.confirm(message)) return;
 
@@ -222,7 +222,7 @@ export function PipelineBoard({
         <div className="pipeline-toolbar">
           <button type="button" className="ghost-button" onClick={openCreateModal}>
             <Plus size={16} />
-            Nou stage
+            New stage
           </button>
         </div>
       ) : null}
@@ -295,7 +295,7 @@ export function PipelineBoard({
                     />
                     <div className="stage-inline-edit-actions">
                       <button className="button" disabled={busyStageId === stage.id || !editingStageName.trim()}>
-                        Guardar
+                        Save
                       </button>
                       <button
                         className="ghost-button"
@@ -306,7 +306,7 @@ export function PipelineBoard({
                         }}
                         disabled={busyStageId === stage.id}
                       >
-                        Cancel·lar
+                        Cancel
                       </button>
                     </div>
                   </form>
@@ -319,8 +319,8 @@ export function PipelineBoard({
                           draggable={!isReorderingStages}
                           role="button"
                           tabIndex={0}
-                          title="Arrossegar stage"
-                          aria-label={`Arrossegar ${stage.name} per reordenar`}
+                          title="Drag stage"
+                          aria-label={`Drag ${stage.name} to reorder`}
                           aria-disabled={isReorderingStages}
                           onDragStart={(event) => {
                             setDraggingStageId(stage.id);
@@ -343,9 +343,9 @@ export function PipelineBoard({
                             type="button"
                             className="icon-button-ghost"
                             onClick={() => startRenamingStage(stage)}
-                            aria-label={`Renombrar ${stage.name}`}
+                            aria-label={`Rename ${stage.name}`}
                             disabled={busyStageId === stage.id}
-                            title="Renombrar stage"
+                            title="Rename stage"
                           >
                             <Pencil size={13} />
                           </button>
@@ -353,9 +353,9 @@ export function PipelineBoard({
                             type="button"
                             className="icon-button-ghost icon-button-ghost-danger"
                             onClick={() => void deleteStage(stage)}
-                            aria-label={`Esborrar ${stage.name}`}
+                            aria-label={`Delete ${stage.name}`}
                             disabled={busyStageId === stage.id}
-                            title="Esborrar stage"
+                            title="Delete stage"
                           >
                             <Trash2 size={13} />
                           </button>
@@ -374,7 +374,7 @@ export function PipelineBoard({
               <div className="kanban-column-body">
                 {stage.leads.length === 0 ? (
                   <div className="kanban-empty" aria-hidden>
-                    <span>Arrossega un lead aquí</span>
+                    <span>Drag a lead here</span>
                   </div>
                 ) : (
                   stage.leads.map((lead) => (
@@ -397,7 +397,7 @@ export function PipelineBoard({
                         {displayLeadName(lead)}
                       </Link>
                       {lead.company ? <small className="muted">{lead.company}</small> : null}
-                      <small>{lead.phone ?? lead.email ?? "Sense contacte"}</small>
+                      <small>{lead.phone ?? lead.email ?? "No contact info"}</small>
                       <small className="muted lead-card-value">
                         {formatCurrencyFromCents(
                           getEffectiveDealValueCents(lead.dealValueOverrideCents, defaultDealValueCents)
@@ -424,24 +424,24 @@ export function PipelineBoard({
         >
           <div className="modal" onClick={(event) => event.stopPropagation()}>
             <div className="modal-header">
-              <h3 id="create-stage-title">Nou stage</h3>
+              <h3 id="create-stage-title">New stage</h3>
               <button
                 type="button"
                 className="icon-button-ghost"
                 onClick={() => setIsCreateOpen(false)}
                 disabled={isCreatingStage}
-                aria-label="Tancar"
+                aria-label="Close"
               >
                 <X size={16} />
               </button>
             </div>
             <form className="modal-body grid" onSubmit={(event) => void createStage(event)}>
               <div className="field">
-                <label htmlFor="new-stage-name">Nom</label>
+                <label htmlFor="new-stage-name">Name</label>
                 <input
                   id="new-stage-name"
                   name="name"
-                  placeholder="Per exemple: Proposta enviada"
+                  placeholder="For example: Proposal sent"
                   value={newStageName}
                   onChange={(event) => setNewStageName(event.target.value)}
                   disabled={isCreatingStage}
@@ -452,7 +452,7 @@ export function PipelineBoard({
                 <label htmlFor="new-stage-color">Color</label>
                 <input
                   id="new-stage-color"
-                  aria-label="Color del stage"
+                  aria-label="Stage color"
                   name="color"
                   type="color"
                   value={newStageColor}
@@ -467,10 +467,10 @@ export function PipelineBoard({
                   onClick={() => setIsCreateOpen(false)}
                   disabled={isCreatingStage}
                 >
-                  Cancel·lar
+                  Cancel
                 </button>
                 <button className="button" disabled={isCreatingStage || !newStageName.trim()}>
-                  {isCreatingStage ? "Creant…" : "Crear stage"}
+                  {isCreatingStage ? "Creating..." : "Create stage"}
                 </button>
               </div>
             </form>

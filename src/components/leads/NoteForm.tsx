@@ -26,11 +26,11 @@ export function NoteForm({ leadId }: { leadId: string }) {
   return (
     <div className="grid">
       <div className="field">
-        <label>Nova nota</label>
+        <label>New note</label>
         <textarea value={body} onChange={(event) => setBody(event.target.value)} />
       </div>
       <button className="button" onClick={submit} disabled={loading || !body.trim()}>
-        Afegir nota
+        Add note
       </button>
     </div>
   );

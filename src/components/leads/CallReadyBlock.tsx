@@ -44,7 +44,7 @@ export function CallReadyBlock({
             <span className="call-ready__hook-label">Opening line</span>
             <p>{hook}</p>
             <div>
-              <CopyButton text={hook} label="Copiar opening line" />
+              <CopyButton text={hook} label="Copy opening line" />
             </div>
           </div>
         ) : null}
@@ -53,7 +53,7 @@ export function CallReadyBlock({
         <LeadCallButton leadId={leadId} leadLabel={leadName} phone={phone} disabled={phoneDisabled} />
         {window ? (
           <div className="call-ready__meta">
-            <span>Millor hora</span>
+            <span>Best time</span>
             <strong>{window}</strong>
           </div>
         ) : null}

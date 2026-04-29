@@ -4,17 +4,62 @@ import { LeadCreateForm } from "@/components/leads/LeadCreateForm";
 import { LeadsTable } from "@/components/leads/LeadsTable";
 import { getCurrentUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
+import {
+  normalizeCompanySize,
+  parsePriorityTier,
+  priorityTierLabel
+} from "@/lib/leads/enriched-field-helpers";
+
+type LeadSearchParams = {
+  q?: string;
+  stageId?: string;
+  priority?: string;
+  companySize?: string;
+};
+
+function asCustomFieldRecord(value: unknown): Record<string, unknown> | null {
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    return value as Record<string, unknown>;
+  }
+
+  return null;
+}
+
+function compareCompanySize(a: string, b: string) {
+  const aStart = Number.parseInt(a, 10);
+  const bStart = Number.parseInt(b, 10);
+  const aHasNumber = Number.isFinite(aStart);
+  const bHasNumber = Number.isFinite(bStart);
+
+  if (aHasNumber && bHasNumber && aStart !== bStart) return aStart - bStart;
+  if (aHasNumber !== bHasNumber) return aHasNumber ? -1 : 1;
+  return a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" });
+}
 
 export default async function LeadsPage({
   searchParams
 }: {
-  searchParams: Promise<{ q?: string; stageId?: string }>;
+  searchParams: Promise<LeadSearchParams>;
 }) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
   const params = await searchParams;
-  const [stages, businessSettings, leads] = await Promise.all([
+  const priorityFilter = parsePriorityTier(params.priority);
+  const companySizeFilter = normalizeCompanySize(params.companySize);
+  const clearFilterParams = new URLSearchParams();
+  if (params.q) clearFilterParams.set("q", params.q);
+  const clearFiltersHref = clearFilterParams.size ? `/leads?${clearFilterParams.toString()}` : "/leads";
+  const baseLeadAccessWhere = {
+    ...(user.role === "ADMIN" ? {} : { ownerId: user.id }),
+    NOT: {
+      stage: {
+        is: { isLost: true }
+      }
+    }
+  };
+
+  const [stages, businessSettings, leadFilterValues, leadCandidates] = await Promise.all([
     prisma.pipelineStage.findMany({
       where: { active: true },
       orderBy: { position: "asc" },
@@ -22,8 +67,12 @@ export default async function LeadsPage({
     }),
     prisma.businessSettings.findFirst({ orderBy: { createdAt: "desc" } }),
     prisma.lead.findMany({
+      where: baseLeadAccessWhere,
+      select: { customFields: true }
+    }),
+    prisma.lead.findMany({
       where: {
-        ...(user.role === "ADMIN" ? {} : { ownerId: user.id }),
+        ...baseLeadAccessWhere,
         ...(params.stageId ? { stageId: params.stageId } : {}),
         ...(params.q
           ? {
@@ -51,34 +100,83 @@ export default async function LeadsPage({
         emailOptOut: true,
         customFields: true
       },
-      orderBy: { updatedAt: "desc" },
-      take: 200
+      orderBy: { updatedAt: "desc" }
     })
   ]);
+
+  const companySizeOptions = Array.from(
+    new Set(
+      leadFilterValues
+        .map((lead) => normalizeCompanySize(asCustomFieldRecord(lead.customFields)?.mida_empresa))
+        .filter((value): value is string => Boolean(value))
+    )
+  ).sort(compareCompanySize);
+
+  const leads = leadCandidates
+    .filter((lead) => {
+      const fields = asCustomFieldRecord(lead.customFields);
+      if (priorityFilter && parsePriorityTier(fields?.priority_tier) !== priorityFilter) return false;
+      if (companySizeFilter && normalizeCompanySize(fields?.mida_empresa) !== companySizeFilter) return false;
+      return true;
+    })
+    .slice(0, 200);
 
   return (
     <AppShell user={user}>
       <div className="page-header">
         <div>
           <h1>Leads</h1>
-          <p>Cerca, filtra, mou pel pipeline i truca directament des del CRM.</p>
+          <p>Search, filter, move through the pipeline, and call directly from the CRM.</p>
         </div>
         <LeadCreateForm
           stages={stages}
           defaultDealValueCents={businessSettings?.defaultDealValueCents ?? 0}
         />
       </div>
-      <form className="toolbar">
-        <input name="q" type="search" placeholder="Cerca per nom, empresa, email o telèfon" defaultValue={params.q} />
-        <select name="stageId" defaultValue={params.stageId ?? ""}>
-          <option value="">Tots els stages</option>
-          {stages.map((stage) => (
-            <option key={stage.id} value={stage.id}>
-              {stage.name}
-            </option>
-          ))}
-        </select>
-        <button className="ghost-button">Filtrar</button>
+      <form className="toolbar leads-toolbar">
+        <input name="q" type="search" placeholder="Search by name, company, email, or phone" defaultValue={params.q} />
+        <details className="filter-menu">
+          <summary className="ghost-button">Filter</summary>
+          <div className="filter-menu__panel">
+            <div className="field">
+              <label>Stage</label>
+              <select name="stageId" defaultValue={params.stageId ?? ""}>
+                <option value="">All stages</option>
+                {stages.map((stage) => (
+                  <option key={stage.id} value={stage.id}>
+                    {stage.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <label>Priority</label>
+              <select name="priority" defaultValue={priorityFilter ?? ""}>
+                <option value="">Any priority</option>
+                {(["top", "high", "mid", "low"] as const).map((tier) => (
+                  <option key={tier} value={tier}>
+                    {priorityTierLabel(tier)}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <label>Company size</label>
+              <select name="companySize" defaultValue={companySizeFilter ?? ""}>
+                <option value="">Any size</option>
+                {companySizeOptions.map((size) => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="filter-menu__actions">
+              <button className="button" type="submit">Apply filters</button>
+              <a className="ghost-button" href={clearFiltersHref}>Clear</a>
+            </div>
+          </div>
+        </details>
       </form>
       <section className="panel">
         <LeadsTable leads={leads} stages={stages} />

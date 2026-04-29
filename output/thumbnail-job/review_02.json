@@ -1,0 +1,21 @@
+{
+  "decision": "approve",
+  "score": 8.935,
+  "scores": {
+    "message_clarity": 8.8,
+    "small_size_readability": 8.8,
+    "face_realism_identity": 9.6,
+    "ctr_hook_strength": 8.5,
+    "topic_relevance": 9.0,
+    "visual_simplicity": 8.7,
+    "reference_style_match": 8.6,
+    "artifact_control": 9.4,
+    "anti_copy_adaptation": 8.9
+  },
+  "hard_fails": [],
+  "notes": [
+    "The central claim is clear and the tag row communicates concrete causes without overcrowding the layout.",
+    "This one leans more analytical and should appeal to viewers expecting a systems breakdown.",
+    "Still distinct from the references despite matching their oversized-text language."
+  ]
+}

@@ -13,12 +13,12 @@ export async function PATCH(request: Request, { params }: Params) {
   return withUser(async (user) => {
     const { id } = await params;
     const parsed = schema.safeParse(await request.json());
-    if (!parsed.success) return NextResponse.json({ error: "Estat no vàlid" }, { status: 400 });
+    if (!parsed.success) return NextResponse.json({ error: "Invalid status" }, { status: 400 });
 
     const existing = await prisma.callLog.findFirst({
       where: { id, ...(user.role === "ADMIN" ? {} : { userId: user.id }) }
     });
-    if (!existing) return NextResponse.json({ error: "Trucada no trobada" }, { status: 404 });
+    if (!existing) return NextResponse.json({ error: "Call not found" }, { status: 404 });
 
     const now = new Date();
     const call = await prisma.callLog.update({
