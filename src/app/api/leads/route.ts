@@ -1,3 +1,4 @@
+import { endOfDay, endOfWeek, startOfDay, startOfWeek } from "date-fns";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
@@ -23,14 +24,56 @@ const createLeadSchema = z.object({
   customFields: z.record(z.string(), z.unknown()).optional()
 });
 
+function getSearchParamValues(searchParams: URLSearchParams, key: string) {
+  return searchParams.getAll(key).map((value) => value.trim()).filter(Boolean);
+}
+
 export async function GET(request: Request) {
   return withUser(async (user) => {
     const url = new URL(request.url);
     const q = url.searchParams.get("q")?.trim();
-    const stageId = url.searchParams.get("stageId") || undefined;
+    const hasStageFilter = url.searchParams.getAll("stageFilter").includes("1");
+    const selectedStageIds = getSearchParamValues(url.searchParams, "stageId");
     const ownerId = url.searchParams.get("ownerId") || undefined;
     const priorityFilter = parsePriorityTier(url.searchParams.get("priority"));
     const companySizeFilter = normalizeCompanySize(url.searchParams.get("companySize"));
+    const scheduledCallFilter =
+      url.searchParams.get("scheduledCall") === "scheduled" ||
+      url.searchParams.get("scheduledCall") === "unscheduled"
+        ? url.searchParams.get("scheduledCall")
+        : null;
+    const includeCalledToday = url.searchParams.get("includeCalledToday") !== "0";
+    const includeCalledWeek = url.searchParams.get("includeCalledWeek") !== "0";
+    const todayStart = startOfDay(new Date());
+    const todayEnd = endOfDay(new Date());
+    const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
+    const weekEnd = endOfWeek(new Date(), { weekStartsOn: 1 });
+    const calledExclusionFilters = [
+      ...(!includeCalledToday
+        ? [
+            {
+              callLogs: {
+                none: {
+                  userId: user.id,
+                  startedAt: { gte: todayStart, lte: todayEnd }
+                }
+              }
+            }
+          ]
+        : []),
+      ...(!includeCalledWeek
+        ? [
+            {
+              callLogs: {
+                none: {
+                  userId: user.id,
+                  startedAt: { gte: weekStart, lte: weekEnd }
+                }
+              }
+            }
+          ]
+        : [])
+    ];
 
     const leadCandidates = await prisma.lead.findMany({
       where: {
@@ -40,7 +83,17 @@ export async function GET(request: Request) {
             is: { isLost: true }
           }
         },
-        ...(stageId ? { stageId } : {}),
+        ...(hasStageFilter
+          ? selectedStageIds.length
+            ? { stageId: { in: selectedStageIds } }
+            : { id: "__no-matching-stage-selection__" }
+          : {}),
+        ...(scheduledCallFilter === "scheduled"
+          ? { nextFollowUpAt: { not: null } }
+          : scheduledCallFilter === "unscheduled"
+          ? { nextFollowUpAt: null }
+          : {}),
+        ...(calledExclusionFilters.length ? { AND: calledExclusionFilters } : {}),
         ...(ownerId && user.role === "ADMIN" ? { ownerId } : {}),
         ...(q
           ? {

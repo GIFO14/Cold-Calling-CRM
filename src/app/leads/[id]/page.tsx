@@ -4,10 +4,12 @@ import { AppShell } from "@/components/layout/AppShell";
 import { CallReadyBlock } from "@/components/leads/CallReadyBlock";
 import { LeadBadges } from "@/components/leads/LeadBadges";
 import { LeadCallButton } from "@/components/leads/LeadCallButton";
+import { LeadFollowUpScheduler } from "@/components/leads/LeadFollowUpScheduler";
 import { LeadPropertiesForm } from "@/components/leads/LeadPropertiesForm";
 import { LeadStageSelect } from "@/components/leads/LeadStageSelect";
 import { NoteForm } from "@/components/leads/NoteForm";
 import { getCurrentUser } from "@/lib/auth/session";
+import { formatCallOutcome } from "@/lib/calls/outcomes";
 import { prisma } from "@/lib/db";
 import { displayLeadName } from "@/lib/leads/normalize";
 
@@ -63,6 +65,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
     website: lead.website,
     linkedinUrl: lead.linkedinUrl,
     source: lead.source,
+    testing: lead.testing,
     nextFollowUpAt: lead.nextFollowUpAt ? format(lead.nextFollowUpAt, "yyyy-MM-dd'T'HH:mm") : null,
     dealValueOverrideCents: lead.dealValueOverrideCents,
     ownerName: lead.owner?.name ?? null,
@@ -75,6 +78,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
         <div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center" }}>
             <h1>{displayLeadName(lead)}</h1>
+            {lead.testing ? <span className="badge">Testing</span> : null}
             <LeadBadges customFields={customFields} jobTitle={lead.jobTitle} />
           </div>
           <p>{lead.company ?? "No company"} {lead.jobTitle ? `· ${lead.jobTitle}` : ""}</p>
@@ -105,6 +109,11 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
             customFieldDefinitions={customFieldDefinitions}
             defaultDealValueCents={businessSettings?.defaultDealValueCents ?? 0}
           />
+          <LeadFollowUpScheduler
+            leadId={lead.id}
+            nextFollowUpAt={leadProperties.nextFollowUpAt}
+            nextFollowUpLabel={lead.nextFollowUpAt ? format(lead.nextFollowUpAt, "dd/MM/yyyy HH:mm") : null}
+          />
           <section className="panel">
             <div className="field">
               <label>Stage</label>
@@ -114,7 +123,17 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
         </div>
         <section className="panel">
           <h2>Notes</h2>
-          <NoteForm leadId={lead.id} />
+          <NoteForm
+            leadId={lead.id}
+            notes={lead.activities
+              .filter((activity) => activity.type === "NOTE" && Boolean(activity.body))
+              .map((activity) => ({
+                id: activity.id,
+                body: activity.body ?? "",
+                createdAt: format(activity.createdAt, "dd/MM/yyyy HH:mm"),
+                userName: activity.user?.name ?? null
+              }))}
+          />
         </section>
       </div>
       <div className="grid grid-2" style={{ marginTop: 18 }}>
@@ -150,7 +169,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
                     <td>{format(call.startedAt, "dd/MM HH:mm")}</td>
                     <td>{call.phoneDialed}</td>
                     <td>{call.status}</td>
-                    <td>{call.outcome ?? "-"}</td>
+                    <td>{formatCallOutcome(call.outcome)}</td>
                   </tr>
                 ))}
               </tbody>

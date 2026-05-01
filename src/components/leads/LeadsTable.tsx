@@ -22,12 +22,28 @@ type LeadListItem = {
   jobTitle: string | null;
   phone: string | null;
   email: string | null;
+  nextFollowUpAt: Date | string | null;
   stageId: string | null;
+  testing: boolean;
   phoneInvalid: boolean;
   phoneOptOut: boolean;
   emailOptOut: boolean;
   customFields?: unknown;
 };
+
+function formatNextCall(value: Date | string | null) {
+  if (!value) return null;
+
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(date);
+}
 
 function normalizeCustomFields(value: unknown): Record<string, unknown> | null {
   if (value && typeof value === "object" && !Array.isArray(value)) {
@@ -179,6 +195,7 @@ export function LeadsTable({
                 />
               </th>
               <th>Lead</th>
+              <th>Next call</th>
               <th>Contact</th>
               <th>Stage</th>
               <th>Flags</th>
@@ -188,13 +205,14 @@ export function LeadsTable({
           <tbody>
             {leads.length === 0 ? (
               <tr>
-                <td colSpan={6} className="muted">
+                <td colSpan={7} className="muted">
                   No leads match these filters.
                 </td>
               </tr>
             ) : (
               leads.map((lead) => {
                 const isSelected = selectedIds.includes(lead.id);
+                const nextCallLabel = formatNextCall(lead.nextFollowUpAt);
 
                 return (
                   <tr key={lead.id} className={isSelected ? "is-selected" : undefined}>
@@ -223,6 +241,13 @@ export function LeadsTable({
                       </div>
                     </td>
                     <td>
+                      {nextCallLabel ? (
+                        <strong>{nextCallLabel}</strong>
+                      ) : (
+                        <span className="muted">-</span>
+                      )}
+                    </td>
+                    <td>
                       <div>{lead.phone ?? "No phone"}</div>
                       <div className="muted">{lead.email}</div>
                     </td>
@@ -231,6 +256,7 @@ export function LeadsTable({
                     </td>
                     <td>
                       <div className="toolbar" style={{ marginBottom: 0 }}>
+                        {lead.testing ? <span className="badge">Testing</span> : null}
                         {lead.phoneInvalid ? <span className="badge">Phone invalid</span> : null}
                         {lead.phoneOptOut ? <span className="badge">Phone opt-out</span> : null}
                         {lead.emailOptOut ? <span className="badge">Email opt-out</span> : null}

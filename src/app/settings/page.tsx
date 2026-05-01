@@ -4,7 +4,14 @@ import { StageSettingsList } from "@/components/settings/StageSettingsList";
 import { getCurrentUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
 import { formatCurrencyInputFromCents } from "@/lib/money";
-import { createStage, createUser, saveBusinessSettings, savePbxSettings, saveStage, saveTelephonySettings } from "./actions";
+import {
+  createStage,
+  createUser,
+  saveBusinessSettings,
+  savePbxSettings,
+  saveStage,
+  saveTelephonySettings
+} from "./actions";
 
 export default async function SettingsPage() {
   const user = await getCurrentUser();

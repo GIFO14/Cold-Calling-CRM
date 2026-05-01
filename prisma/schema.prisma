@@ -51,6 +51,7 @@ enum CallStatus {
 
 enum CallOutcome {
   NO_ANSWER
+  HUNG_UP_BEFORE_ANSWER
   BUSY
   WRONG_NUMBER
   INTERESTED
@@ -59,6 +60,37 @@ enum CallOutcome {
   MEETING_BOOKED
   DO_NOT_CALL
   OTHER
+}
+
+enum CallScriptSessionStatus {
+  ACTIVE
+  COMPLETED
+  CALL_ENDED
+}
+
+enum CallScriptPane {
+  SCRIPT
+  OBJECTION
+}
+
+enum CallScriptSessionEventType {
+  SESSION_STARTED
+  STEP_SHOWN
+  STEP_COMPLETED
+  STEP_OPTION_SELECTED
+  STEP_BACK
+  OBJECTION_OPENED
+  RESPONSE_SHOWN
+  OBJECTION_OPTION_SELECTED
+  RETURNED_TO_SCRIPT
+  SESSION_COMPLETED
+  SESSION_CLOSED
+}
+
+enum CallScriptBranchTargetType {
+  STEP
+  OBJECTION
+  TERMINAL
 }
 
 model User {
@@ -74,6 +106,8 @@ model User {
   activities         LeadActivity[]
   imports            ImportBatch[]
   callLogs           CallLog[]
+  createdCallScripts CallScript[]            @relation("CallScriptCreator")
+  callScriptSessions CallScriptSession[]
   telephonySettings  AgentTelephonySettings?
 }
 
@@ -142,6 +176,7 @@ model Lead {
   source          String?
   ownerId         String?
   stageId         String?
+  testing         Boolean        @default(false)
   dealValueOverrideCents Int?
   lastContactedAt DateTime?
   nextFollowUpAt  DateTime?
@@ -152,6 +187,7 @@ model Lead {
   stage           PipelineStage? @relation(fields: [stageId], references: [id], onDelete: SetNull)
   activities      LeadActivity[]
   callLogs        CallLog[]
+  callScriptSessions CallScriptSession[]
 
   @@index([phoneNormalized])
   @@index([emailNormalized])
@@ -225,7 +261,169 @@ model CallLog {
   notes           String?
   lead            Lead         @relation(fields: [leadId], references: [id], onDelete: Cascade)
   user            User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  callScriptSession CallScriptSession?
 
   @@index([leadId])
   @@index([userId])
+}
+
+model CallScript {
+  id          String               @id @default(cuid())
+  name        String
+  languageCode String              @default("ca")
+  isActive    Boolean              @default(true)
+  createdById String?
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  createdBy   User?                @relation("CallScriptCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  steps       CallScriptStep[]
+  objections  CallScriptObjection[]
+  sessions    CallScriptSession[]
+
+  @@index([isActive])
+  @@unique([languageCode])
+}
+
+model CallScriptStep {
+  id        String                   @id @default(cuid())
+  scriptId  String
+  position  Int
+  title     String
+  text      String
+  advanceTargetType CallScriptBranchTargetType?
+  advanceTargetStepId String?
+  advanceTargetObjectionId String?
+  advanceTerminalLabel String?
+  createdAt DateTime                 @default(now())
+  updatedAt DateTime                 @updatedAt
+  script    CallScript               @relation(fields: [scriptId], references: [id], onDelete: Cascade)
+  choices   CallScriptStepChoice[]
+  advanceTargetStep CallScriptStep?  @relation("StepAdvanceTargetStep", fields: [advanceTargetStepId], references: [id], onDelete: SetNull)
+  advanceTargetObjection CallScriptObjection? @relation("StepAdvanceTargetObjection", fields: [advanceTargetObjectionId], references: [id], onDelete: SetNull)
+  incomingAdvanceSteps CallScriptStep[] @relation("StepAdvanceTargetStep")
+  incomingStepChoices CallScriptStepChoice[] @relation("StepChoiceTargetStep")
+  incomingObjectionChoices CallScriptObjectionChoice[] @relation("ObjectionChoiceTargetStep")
+  events    CallScriptSessionEvent[]
+
+  @@index([scriptId, position])
+}
+
+model CallScriptObjection {
+  id                 String                   @id @default(cuid())
+  scriptId           String
+  position           Int
+  label              String
+  createdAt          DateTime                 @default(now())
+  updatedAt          DateTime                 @updatedAt
+  script             CallScript               @relation(fields: [scriptId], references: [id], onDelete: Cascade)
+  responses          CallScriptResponse[]
+  choices            CallScriptObjectionChoice[]
+  incomingAdvanceSteps CallScriptStep[]         @relation("StepAdvanceTargetObjection")
+  incomingStepChoices CallScriptStepChoice[]  @relation("StepChoiceTargetObjection")
+  incomingObjectionChoices CallScriptObjectionChoice[] @relation("ObjectionChoiceTargetObjection")
+  selectedInSessions CallScriptSession[]      @relation("SelectedSessionObjection")
+  events             CallScriptSessionEvent[]
+
+  @@index([scriptId, position])
+}
+
+model CallScriptResponse {
+  id                 String                   @id @default(cuid())
+  objectionId        String
+  position           Int
+  label              String?
+  text               String
+  createdAt          DateTime                 @default(now())
+  updatedAt          DateTime                 @updatedAt
+  objection          CallScriptObjection      @relation(fields: [objectionId], references: [id], onDelete: Cascade)
+  selectedInSessions CallScriptSession[]      @relation("SelectedSessionResponse")
+  events             CallScriptSessionEvent[]
+
+  @@index([objectionId, position])
+}
+
+model CallScriptStepChoice {
+  id                String                    @id @default(cuid())
+  stepId            String
+  position          Int
+  label             String
+  targetType        CallScriptBranchTargetType
+  targetStepId      String?
+  targetObjectionId String?
+  terminalLabel     String?
+  createdAt         DateTime                  @default(now())
+  updatedAt         DateTime                  @updatedAt
+  step              CallScriptStep            @relation(fields: [stepId], references: [id], onDelete: Cascade)
+  targetStep        CallScriptStep?           @relation("StepChoiceTargetStep", fields: [targetStepId], references: [id], onDelete: SetNull)
+  targetObjection   CallScriptObjection?      @relation("StepChoiceTargetObjection", fields: [targetObjectionId], references: [id], onDelete: SetNull)
+
+  @@index([stepId, position])
+}
+
+model CallScriptObjectionChoice {
+  id                String                    @id @default(cuid())
+  objectionId       String
+  position          Int
+  label             String
+  targetType        CallScriptBranchTargetType
+  targetStepId      String?
+  targetObjectionId String?
+  terminalLabel     String?
+  createdAt         DateTime                  @default(now())
+  updatedAt         DateTime                  @updatedAt
+  objection         CallScriptObjection       @relation(fields: [objectionId], references: [id], onDelete: Cascade)
+  targetStep        CallScriptStep?           @relation("ObjectionChoiceTargetStep", fields: [targetStepId], references: [id], onDelete: SetNull)
+  targetObjection   CallScriptObjection?      @relation("ObjectionChoiceTargetObjection", fields: [targetObjectionId], references: [id], onDelete: SetNull)
+
+  @@index([objectionId, position])
+}
+
+model CallScriptSession {
+  id                 String                   @id @default(cuid())
+  scriptId           String
+  leadId             String
+  userId             String?
+  callLogId          String?                  @unique
+  status             CallScriptSessionStatus  @default(ACTIVE)
+  pane               CallScriptPane           @default(SCRIPT)
+  currentStepIndex   Int                      @default(0)
+  highestStepIndex   Int                      @default(0)
+  selectedObjectionId String?
+  selectedResponseId String?
+  startedAt          DateTime                 @default(now())
+  endedAt            DateTime?
+  endReason          String?
+  script             CallScript               @relation(fields: [scriptId], references: [id], onDelete: Cascade)
+  lead               Lead                     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  user               User?                    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  callLog            CallLog?                 @relation(fields: [callLogId], references: [id], onDelete: SetNull)
+  selectedObjection  CallScriptObjection?     @relation("SelectedSessionObjection", fields: [selectedObjectionId], references: [id], onDelete: SetNull)
+  selectedResponse   CallScriptResponse?      @relation("SelectedSessionResponse", fields: [selectedResponseId], references: [id], onDelete: SetNull)
+  events             CallScriptSessionEvent[]
+
+  @@index([scriptId, startedAt])
+  @@index([leadId, startedAt])
+  @@index([userId, startedAt])
+  @@index([status, startedAt])
+}
+
+model CallScriptSessionEvent {
+  id          String                    @id @default(cuid())
+  sessionId   String
+  type        CallScriptSessionEventType
+  stepId      String?
+  stepPosition Int?
+  objectionId String?
+  responseId  String?
+  metadata    Json                      @default("{}")
+  createdAt   DateTime                  @default(now())
+  session     CallScriptSession         @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  step        CallScriptStep?           @relation(fields: [stepId], references: [id], onDelete: SetNull)
+  objection   CallScriptObjection?      @relation(fields: [objectionId], references: [id], onDelete: SetNull)
+  response    CallScriptResponse?       @relation(fields: [responseId], references: [id], onDelete: SetNull)
+
+  @@index([sessionId, createdAt])
+  @@index([type, createdAt])
+  @@index([objectionId, createdAt])
+  @@index([responseId, createdAt])
 }

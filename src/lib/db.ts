@@ -11,7 +11,7 @@ export const prisma =
     log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"]
   });
 
-const requiredDelegates = ["businessSettings", "pipelineStage"] as const;
+const requiredDelegates = ["businessSettings", "pipelineStage", "callScript", "callScriptSession"] as const;
 const missingDelegates = requiredDelegates.filter((delegate) => !(delegate in prisma));
 
 if (missingDelegates.length > 0) {

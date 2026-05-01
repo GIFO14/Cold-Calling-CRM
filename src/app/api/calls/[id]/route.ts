@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { closeCallScriptSessionByCallLogId } from "@/lib/call-script";
 import { prisma } from "@/lib/db";
 import { withUser } from "@/lib/auth/api";
 
@@ -30,6 +31,10 @@ export async function PATCH(request: Request, { params }: Params) {
         endedAt: ["COMPLETED", "FAILED", "MISSED", "CANCELED"].includes(parsed.data.status) ? now : undefined
       }
     });
+
+    if (["COMPLETED", "FAILED", "MISSED", "CANCELED"].includes(parsed.data.status)) {
+      await closeCallScriptSessionByCallLogId(id, parsed.data.status.toLowerCase());
+    }
 
     return NextResponse.json({ call });
   });

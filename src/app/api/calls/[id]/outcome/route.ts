@@ -1,20 +1,12 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { CALL_OUTCOME_VALUES } from "@/lib/calls/outcomes";
+import { closeCallScriptSessionByCallLogId } from "@/lib/call-script";
 import { prisma } from "@/lib/db";
 import { withUser } from "@/lib/auth/api";
 
 const schema = z.object({
-  outcome: z.enum([
-    "NO_ANSWER",
-    "BUSY",
-    "WRONG_NUMBER",
-    "INTERESTED",
-    "CALL_BACK",
-    "NOT_INTERESTED",
-    "MEETING_BOOKED",
-    "DO_NOT_CALL",
-    "OTHER"
-  ]),
+  outcome: z.enum(CALL_OUTCOME_VALUES),
   notes: z.string().optional()
 });
 type Params = { params: Promise<{ id: string }> };
@@ -46,6 +38,8 @@ export async function POST(request: Request, { params }: Params) {
         durationSeconds
       }
     });
+
+    await closeCallScriptSessionByCallLogId(id, `outcome_${parsed.data.outcome.toLowerCase()}`);
 
     await prisma.leadActivity.create({
       data: {

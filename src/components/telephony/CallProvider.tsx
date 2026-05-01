@@ -4,19 +4,8 @@ import Link from "next/link";
 import { Mic, MicOff, Pause, PhoneOff, PhoneOutgoing, Play, UserRound } from "lucide-react";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { SimpleUser } from "sip.js/lib/platform/web";
+import { CALL_OUTCOME_VALUES, formatCallOutcome, type CallOutcomeValue } from "@/lib/calls/outcomes";
 import { normalizePhone } from "@/lib/leads/normalize";
-
-const outcomes = [
-  "NO_ANSWER",
-  "BUSY",
-  "WRONG_NUMBER",
-  "INTERESTED",
-  "CALL_BACK",
-  "NOT_INTERESTED",
-  "MEETING_BOOKED",
-  "DO_NOT_CALL",
-  "OTHER"
-] as const;
 
 type TelephonyConfig = {
   enabled: boolean;
@@ -57,10 +46,12 @@ type CallContextValue = {
   toggleMute: () => void;
   toggleHold: () => Promise<void>;
   saveOutcome: () => Promise<void>;
-  outcome: string;
+  outcome: CallOutcomeValue;
   notes: string;
-  setOutcome: (value: string) => void;
+  nextCallAt: string;
+  setOutcome: (value: CallOutcomeValue) => void;
   setNotes: (value: string) => void;
+  setNextCallAt: (value: string) => void;
 };
 
 const CallContext = createContext<CallContextValue | null>(null);
@@ -163,6 +154,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const userRef = useRef<SimpleUser | null>(null);
   const activeCallRef = useRef<ActiveCall | null>(null);
+  const localHangupRef = useRef(false);
   const ringtoneContextRef = useRef<AudioContext | null>(null);
   const ringtoneGainRef = useRef<GainNode | null>(null);
   const ringtoneOscillatorsRef = useRef<OscillatorNode[]>([]);
@@ -172,8 +164,9 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   const [isMuted, setIsMuted] = useState(false);
   const [isHeld, setIsHeld] = useState(false);
   const [isBusy, setIsBusy] = useState(false);
-  const [outcome, setOutcome] = useState("NO_ANSWER");
+  const [outcome, setOutcome] = useState<CallOutcomeValue>("NO_ANSWER");
   const [notes, setNotes] = useState("");
+  const [nextCallAt, setNextCallAt] = useState("");
   const [clock, setClock] = useState(Date.now());
 
   const syncActiveCall = useCallback((nextCall: ActiveCall | null) => {
@@ -184,6 +177,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   const resetComposer = useCallback(() => {
     setOutcome("NO_ANSWER");
     setNotes("");
+    setNextCallAt("");
   }, []);
 
   const stopRingingTone = useCallback(() => {
@@ -241,6 +235,37 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
 
     return ringtoneContextRef.current;
   }, []);
+
+  const playRemoteHangupTone = useCallback(async () => {
+    const context = await ensureRingtoneContext();
+    if (!context) return;
+
+    const now = context.currentTime;
+    const gain = context.createGain();
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.connect(context.destination);
+
+    const notes = [
+      { frequency: 660, start: now, duration: 0.12 },
+      { frequency: 440, start: now + 0.16, duration: 0.18 }
+    ];
+
+    for (const note of notes) {
+      const oscillator = context.createOscillator();
+      oscillator.type = "triangle";
+      oscillator.frequency.setValueAtTime(note.frequency, note.start);
+      oscillator.connect(gain);
+      gain.gain.setValueAtTime(0.0001, note.start);
+      gain.gain.exponentialRampToValueAtTime(0.05, note.start + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, note.start + note.duration);
+      oscillator.start(note.start);
+      oscillator.stop(note.start + note.duration + 0.02);
+    }
+
+    window.setTimeout(() => {
+      gain.disconnect();
+    }, 500);
+  }, [ensureRingtoneContext]);
 
   const startRingingTone = useCallback(async () => {
     const context = await ensureRingtoneContext();
@@ -337,6 +362,11 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
             void patchCallStatus(current.callId, "ANSWERED");
           },
           onCallHangup: () => {
+            stopRingingTone();
+            if (!localHangupRef.current) {
+              void playRemoteHangupTone();
+            }
+            localHangupRef.current = false;
             void markCallFinished("COMPLETED", "Call ended");
           },
           onCallHold: (held) => {
@@ -369,6 +399,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       let createdCallId: string | null = null;
 
       try {
+        localHangupRef.current = false;
         // Request mic access before the first awaited network call so the browser
         // keeps the permission prompt tied to the original click interaction.
         await ensureRingtoneContext();
@@ -445,6 +476,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
 
     setIsBusy(true);
     try {
+      localHangupRef.current = true;
       await userRef.current?.hangup();
       await markCallFinished("COMPLETED", "Call ended");
     } finally {
@@ -490,11 +522,27 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
 
     setIsBusy(true);
     try {
-      await fetch(`/api/calls/${current.callId}/outcome`, {
+      const outcomeResponse = await fetch(`/api/calls/${current.callId}/outcome`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ outcome, notes })
       });
+      if (!outcomeResponse.ok) {
+        throw new Error("Could not save the call outcome.");
+      }
+
+      if (nextCallAt.trim()) {
+        const followUpResponse = await fetch(`/api/leads/${current.leadId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ nextFollowUpAt: nextCallAt })
+        });
+
+        if (!followUpResponse.ok) {
+          throw new Error("Could not schedule the next call.");
+        }
+      }
+
       syncActiveCall(null);
       resetComposer();
       setIsHeld(false);
@@ -502,7 +550,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsBusy(false);
     }
-  }, [notes, outcome, resetComposer, syncActiveCall]);
+  }, [nextCallAt, notes, outcome, resetComposer, syncActiveCall]);
 
   useEffect(() => {
     if (!activeCall) return;
@@ -542,10 +590,12 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       saveOutcome,
       outcome,
       notes,
+      nextCallAt,
       setOutcome,
-      setNotes
+      setNotes,
+      setNextCallAt
     }),
-    [activeCall, hangup, isBusy, isHeld, isMuted, notes, outcome, saveOutcome, startCall, toggleHold, toggleMute]
+    [activeCall, hangup, isBusy, isHeld, isMuted, nextCallAt, notes, outcome, saveOutcome, startCall, toggleHold, toggleMute]
   );
 
   const durationSeconds =
@@ -590,6 +640,10 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
               <UserRound size={16} />
               Lead
             </Link>
+            <Link href="/call-script" className="ghost-button call-banner__link">
+              <PhoneOutgoing size={16} />
+              Script
+            </Link>
             <button className="ghost-button icon-button" onClick={toggleMute} disabled={!showLiveControls} title="Mute">
               {isMuted ? <MicOff size={16} /> : <Mic size={16} />}
             </button>
@@ -606,10 +660,10 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
             <div className="call-banner__outcome">
               <div className="field">
                 <label>Outcome</label>
-                <select value={outcome} onChange={(event) => setOutcome(event.target.value)}>
-                  {outcomes.map((item) => (
+                <select value={outcome} onChange={(event) => setOutcome(event.target.value as CallOutcomeValue)}>
+                  {CALL_OUTCOME_VALUES.map((item) => (
                     <option key={item} value={item}>
-                      {item}
+                      {formatCallOutcome(item)}
                     </option>
                   ))}
                 </select>
@@ -617,6 +671,14 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
               <div className="field">
                 <label>Notes</label>
                 <textarea value={notes} onChange={(event) => setNotes(event.target.value)} />
+              </div>
+              <div className="field">
+                <label>Next call</label>
+                <input
+                  type="datetime-local"
+                  value={nextCallAt}
+                  onChange={(event) => setNextCallAt(event.target.value)}
+                />
               </div>
               <button className="button" onClick={saveOutcome} disabled={isBusy}>
                 Save outcome

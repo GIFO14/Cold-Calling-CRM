@@ -3,7 +3,20 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-export function NoteForm({ leadId }: { leadId: string }) {
+type LeadNote = {
+  id: string;
+  body: string;
+  createdAt: string;
+  userName: string | null;
+};
+
+export function NoteForm({
+  leadId,
+  notes
+}: {
+  leadId: string;
+  notes: LeadNote[];
+}) {
   const router = useRouter();
   const [body, setBody] = useState("");
   const [loading, setLoading] = useState(false);
@@ -25,6 +38,18 @@ export function NoteForm({ leadId }: { leadId: string }) {
 
   return (
     <div className="grid">
+      {notes.length ? (
+        <div className="timeline">
+          {notes.map((note) => (
+            <div key={note.id} className="timeline-item">
+              <div className="muted" style={{ marginBottom: 6 }}>
+                {note.createdAt} {note.userName ? `· ${note.userName}` : ""}
+              </div>
+              <p style={{ margin: 0, whiteSpace: "pre-wrap" }}>{note.body}</p>
+            </div>
+          ))}
+        </div>
+      ) : null}
       <div className="field">
         <label>New note</label>
         <textarea value={body} onChange={(event) => setBody(event.target.value)} />

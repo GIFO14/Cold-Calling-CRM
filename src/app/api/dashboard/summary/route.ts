@@ -1,13 +1,18 @@
 import { NextResponse } from "next/server";
 import { format, subDays } from "date-fns";
+import { formatCallOutcome } from "@/lib/calls/outcomes";
 import { prisma } from "@/lib/db";
 import { withUser } from "@/lib/auth/api";
 import { getEffectiveDealValueCents } from "@/lib/money";
 
 export async function GET() {
   return withUser(async (user) => {
-    const leadWhere = user.role === "ADMIN" ? {} : { ownerId: user.id };
-    const callWhere = user.role === "ADMIN" ? {} : { userId: user.id };
+    const leadWhere = { testing: false, ...(user.role === "ADMIN" ? {} : { ownerId: user.id }) };
+    const callWhere = {
+      ...(user.role === "ADMIN" ? {} : { userId: user.id }),
+      lead: { is: { testing: false } }
+    };
+    const stageActivityLeadWhere = user.role === "ADMIN" ? { testing: false } : { ownerId: user.id, testing: false };
     const weekStart = subDays(new Date(), 7);
     const monthStart = subDays(new Date(), 30);
 
@@ -47,7 +52,7 @@ export async function GET() {
         where: {
           type: "STAGE_CHANGED",
           createdAt: { gte: monthStart },
-          ...(user.role === "ADMIN" ? {} : { lead: { is: { ownerId: user.id } } })
+          lead: { is: stageActivityLeadWhere }
         },
         select: {
           createdAt: true,
@@ -125,7 +130,7 @@ export async function GET() {
       callsWeek,
       wonRevenueByDay,
       outcomeBreakdown: outcomes.map((item) => ({
-        name: item.outcome ?? "OTHER",
+        name: formatCallOutcome(item.outcome),
         value: item._count.outcome
       })),
       imports

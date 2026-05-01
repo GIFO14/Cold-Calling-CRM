@@ -1,6 +1,7 @@
 "use client";
 
 import { Phone, PhoneOff } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useCall } from "@/components/telephony/CallProvider";
 
@@ -15,6 +16,7 @@ export function LeadCallButton({
   phone: string | null;
   disabled?: boolean;
 }) {
+  const router = useRouter();
   const { activeCall, isBusy, startCall, hangup } = useCall();
   const [status, setStatus] = useState("Ready");
 
@@ -32,6 +34,10 @@ export function LeadCallButton({
       setStatus("Connecting");
       await startCall({ leadId, leadLabel, phone });
       setStatus("Dialing");
+      const preferredLanguage =
+        typeof window !== "undefined" ? window.localStorage.getItem("preferredScriptLanguage") : null;
+      const lang = preferredLanguage && ["ca", "es"].includes(preferredLanguage) ? preferredLanguage : "ca";
+      router.push(`/call-script?lang=${lang}`);
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Call error");
     }

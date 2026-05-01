@@ -14,7 +14,10 @@ export default async function PipelinePage() {
       orderBy: { position: "asc" },
       include: {
         leads: {
-          where: user.role === "ADMIN" ? undefined : { ownerId: user.id },
+          where: {
+            testing: false,
+            ...(user.role === "ADMIN" ? {} : { ownerId: user.id })
+          },
           orderBy: { updatedAt: "desc" },
           select: {
             id: true,

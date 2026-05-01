@@ -1,3 +1,4 @@
+import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
@@ -5,6 +6,16 @@ import { prisma } from "@/lib/db";
 import { withUser } from "@/lib/auth/api";
 import { getEffectiveDealValueCents } from "@/lib/money";
 import { normalizeEmail, normalizePhone } from "@/lib/leads/normalize";
+
+function formatFollowUpActivityDate(value: Date) {
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(value);
+}
 
 const updateLeadSchema = z.object({
   firstName: z.string().nullable().optional(),
@@ -21,6 +32,7 @@ const updateLeadSchema = z.object({
   website: z.string().nullable().optional(),
   linkedinUrl: z.string().nullable().optional(),
   source: z.string().nullable().optional(),
+  testing: z.boolean().optional(),
   nextFollowUpAt: z.string().nullable().optional(),
   dealValueOverrideCents: z.number().int().nonnegative().nullable().optional(),
   customFields: z.record(z.string(), z.unknown()).optional()
@@ -89,14 +101,42 @@ export async function PATCH(request: Request, { params }: Params) {
       data: updateData
     });
 
+    const followUpChanged =
+      parsed.data.nextFollowUpAt !== undefined &&
+      (existing.nextFollowUpAt?.getTime() ?? null) !== (updated.nextFollowUpAt?.getTime() ?? null);
+
+    const activity =
+      followUpChanged && updated.nextFollowUpAt
+        ? {
+            type: "FOLLOW_UP_SET" as const,
+            title: existing.nextFollowUpAt ? "Follow-up rescheduled" : "Follow-up scheduled",
+            body: `Next call on ${formatFollowUpActivityDate(updated.nextFollowUpAt)}`
+          }
+        : followUpChanged
+        ? {
+            type: "FOLLOW_UP_SET" as const,
+            title: "Follow-up cleared",
+            body: undefined
+          }
+        : {
+            type: "FIELD_UPDATED" as const,
+            title: "Lead updated",
+            body: undefined
+          };
+
     await prisma.leadActivity.create({
       data: {
         leadId: id,
         userId: user.id,
-        type: "FIELD_UPDATED",
-        title: "Lead updated"
+        type: activity.type,
+        title: activity.title,
+        body: activity.body
       }
     });
+
+    revalidatePath("/dashboard");
+    revalidatePath("/leads");
+    revalidatePath(`/leads/${id}`);
 
     return NextResponse.json({ lead: updated });
   });

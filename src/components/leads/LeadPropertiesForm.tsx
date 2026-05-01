@@ -38,6 +38,7 @@ type LeadProperties = {
   website: string | null;
   linkedinUrl: string | null;
   source: string | null;
+  testing: boolean;
   nextFollowUpAt: string | null;
   dealValueOverrideCents: number | null;
   ownerName: string | null;
@@ -320,6 +321,7 @@ export function LeadPropertiesForm({
         email: toNullableString(formData.get("email")),
         emailInvalid: formData.get("emailInvalid") === "on",
         emailOptOut: formData.get("emailOptOut") === "on",
+        testing: formData.get("testing") === "on",
         website: toNullableString(formData.get("website")),
         linkedinUrl: toNullableString(formData.get("linkedinUrl")),
         source: toNullableString(formData.get("source")),
@@ -376,7 +378,9 @@ export function LeadPropertiesForm({
           {lead.phoneOptOut ? <span className="badge">Phone opt-out</span> : null}
           {lead.emailInvalid ? <span className="badge">Email invalid</span> : null}
           {lead.emailOptOut ? <span className="badge">Email opt-out</span> : null}
+          {lead.testing ? <span className="badge">Testing</span> : null}
         </div>
+        {lead.testing ? <p className="muted">This lead is excluded from dashboard and pipeline metrics.</p> : null}
         {painPointValue || competitorValue ? (
           <div className="grid" style={{ gap: 8 }}>
             {painPointValue ? (
@@ -507,6 +511,7 @@ export function LeadPropertiesForm({
           <label><input type="checkbox" name="phoneOptOut" defaultChecked={lead.phoneOptOut} /> Phone opt-out</label>
           <label><input type="checkbox" name="emailInvalid" defaultChecked={lead.emailInvalid} /> Email invalid</label>
           <label><input type="checkbox" name="emailOptOut" defaultChecked={lead.emailOptOut} /> Email opt-out</label>
+          <label><input type="checkbox" name="testing" defaultChecked={lead.testing} /> Testing</label>
         </div>
         <div className="section-title-row">
           <h3>Enriched fields</h3>

@@ -129,41 +129,6 @@ async function ensureCustomFieldDefinitions(mapping: CsvColumnMapping[], importI
   }
 }
 
-function mergeExistingLead(
-  existing: { customFields: Prisma.JsonValue } & Record<string, unknown>,
-  incoming: Record<string, string | boolean | Date | null>,
-  incomingCustomFields: Record<string, unknown>
-) {
-  const update: Record<string, unknown> = {};
-
-  for (const [key, value] of Object.entries(incoming)) {
-    if (value === undefined || value === null || value === "") continue;
-    if (existing[key] === undefined || existing[key] === null || existing[key] === "") {
-      update[key] = value;
-    }
-  }
-
-  const currentCustomFields =
-    existing.customFields && typeof existing.customFields === "object" && !Array.isArray(existing.customFields)
-      ? (existing.customFields as Record<string, unknown>)
-      : {};
-  const mergedCustomFields = { ...currentCustomFields };
-  let customChanged = false;
-
-  for (const [key, value] of Object.entries(incomingCustomFields)) {
-    if (mergedCustomFields[key] === undefined || mergedCustomFields[key] === "") {
-      mergedCustomFields[key] = value;
-      customChanged = true;
-    }
-  }
-
-  if (customChanged) {
-    update.customFields = mergedCustomFields as Prisma.InputJsonValue;
-  }
-
-  return update;
-}
-
 export async function importLeads({ filename, rows, mapping, userId }: ImportLeadsInput) {
   const importBatch = await prisma.importBatch.create({
     data: {
@@ -204,25 +169,7 @@ export async function importLeads({ filename, rows, mapping, userId }: ImportLea
         : null;
 
       if (existing) {
-        const update = mergeExistingLead(existing, lead, customFields);
-        if (Object.keys(update).length) {
-          await prisma.lead.update({
-            where: { id: existing.id },
-            data: update
-          });
-        }
-
-        await prisma.leadActivity.create({
-          data: {
-            leadId: existing.id,
-            userId,
-            type: "IMPORT_UPDATED",
-            title: "Lead updated from import",
-            body: filename,
-            metadata: { importBatchId: importBatch.id, rowNumber: index + 2 }
-          }
-        });
-        updatedRows += 1;
+        skippedRows += 1;
       } else {
         const created = await prisma.lead.create({
           data: {
